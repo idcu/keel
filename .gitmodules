@@ -1,0 +1,3 @@
+[submodule "keel-starter"]
+	path = keel-starter
+	url = git@gitee.com:idcu/keel-starter.git
