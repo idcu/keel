@@ -1,0 +1,24 @@
+name: keel（项目仓）
+
+# 规格仓的 CI：守"文档与脚本不许漂移"这条不变量。
+# 发布仓 keel-starter 另有自己的 workflow（lint + 自测），不依赖子模块。
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  spec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # .gitmodules 用相对 URL（../keel-starter.git），两个托管站各自解析到同站同级仓库，
+          # 所以这里不需要任何 URL 覆盖或 gitee 密钥
+          submodules: recursive
+
+      - name: 自测 + 规格一致性（在规格仓里 DOC 检查才真正生效）
+        run: bash keel-starter/keel/checks/test-lint.sh
+
+      - name: 发布仓模板自身过一遍 lint
+        run: bash keel-starter/keel/checks/keel-lint.sh keel-starter/keel
