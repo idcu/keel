@@ -1,5 +1,6 @@
-# 设计稿：只在本机维护，不进版本历史
-#
-# 注意：keel-starter 的自测（keel/checks/test-lint.py）会向上查找 DESIGN.md 并比对
-# §9.3 的脚本是否逐字一致。忽略它只影响 git，不影响那次检查——文件仍在磁盘上。
-DESIGN.md
+# macOS
+.DS_Store
+
+# commit-msg 钩子的临时文件：写入被中断时可能残留
+# （hook 正常情况下会 mv 或 rm 掉它，见 keel-starter/keel/checks/hooks/commit-msg）
+*.keeltmp

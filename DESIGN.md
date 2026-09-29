@@ -1,0 +1,1153 @@
+# Keel · 开发文档（v3）
+
+> 中文名：龙骨　｜　定位：AI 开发项目的上下文基座 + 轻量合规关卡
+> 一句话：**让 AI 在任何一次会话里，都能以恒定成本拿到正确的上下文。**
+
+> 关于本文档：这是设计稿，不进入运行期加载路径（因此不适用 §7 的行数预算；落地后的规则正文按 §7 拆分）。v2 修复了 v1 的全部规格矛盾，补齐了接入 / 闭环 / 蒸馏计数 / 并发 / 合规五处机制空缺；**v3 把"机器验"回敬给文档自己**——预算从"行数单约束"改成"行数 × 字节 × 单行"三约束（行数不是 token 的有效代理，实测可差 10 倍），把此前"声称由 lint 强制、实则未实现"的 9 项检查真正写进 §9.3，并让入口规格、项目状态、点火锚点全部进入可验证路径。§9.3 的脚本已通过 36 例故障注入实测（28 类 fail 缺陷 + 2 类告警 + 6 类合法基线，零 stderr 噪声）。
+> 阅读路线：§1–2 立论 → §3 结构 → **§4 点火（不做这步，其余全部无效）** → §5–8 规范 → §9 校验 → §10–11 运转 → §12 落地。
+
+---
+
+## 1. 核心命题
+
+AI 时代开发最贵的成本不是写代码，是**上下文重建**：每次开新会话，AI 都像一个手速极快、但每天早上失忆的实习生。
+
+Keel 给这个实习生配齐：**入职手册 + 工作台 + 错题本 + 交接本 + 质检台**。
+
+### 1.1 唯一的死因
+
+Keel 这类基座项目只有一个死法：**长胖到没人（也没 AI）读得动，最后沦为摆设**。
+
+所以第一性原理不是"内容全"，而是：
+
+> **矛盾不在「内容多」，在「存储量 vs 加载量」。存储可以无限增长，加载量必须恒定。**
+
+- 目标不是让 Keel 变小——而是无论它长到 1MB 还是 1GB，单次会话加载量恒定在 **≤5k token**；
+- 手段是把「大文件」拆成「索引 + 一堆小文件」：总字数不减反增，但每次只取一格。
+
+### 1.2 不做什么
+
+- ❌ 不做通用项目管理工具（不替代 Jira / Linear）
+- ❌ 不做文档 wiki（不替代 Confluence）
+- ❌ 不做审计 / 权限系统——合规留痕用 git 历史 + `decisions/`（SSOT，不重复造）
+- ❌ 不重复定义已有的东西：每类事实只有一个定义位置（见 §2 原则 1）
+- ❌ 不做"事实迁移"运动——仓库里已有的 ADR / `docs/` / `CONTRIBUTING.md` 不搬不删，只在 `INDEX.md` 路由表里登记为**指针**（§2 原则 1：能引用的绝不复制）。判断标准只有一条：**这条内容会被 AI 反复读吗？** 会，才值得迁进 Keel；不会，留在原地并指过去。
+- ❌ 不靠人自觉——能脚本化的检查一律脚本化，有钩子的闭环才算闭环（见 §10.4）
+
+---
+
+## 2. 设计原则
+
+| # | 原则 | 含义 | 违反后果 |
+|---|---|---|---|
+| 1 | **SSOT · 定义权单向** | 每类事实只有一个定义位置（见 §3.1）；其他位置只能引用，不得复制 | 必然漂移，AI 读到过期版本 |
+| 2 | **恒定加载** | 单次会话读取量恒定，不随 Keel 体积增长 | 注意力稀释，退化成"没用 Keel" |
+| 3 | **索引化** | 任何超预算内容必须降级为索引 + 指针 | 找不到 / 一次读太多 |
+| 4 | **机器验** | 一致性靠脚本，不靠自觉 | 文档腐烂无人知 |
+| 5 | **强制闭环** | 完成任务必须写回；且闭环要有可执行的钩子 | 下次会话上下文断裂 |
+| 6 | **坑的复利** | 任何返工 / 回滚 / revert 必须补一条坑 | AI 反复犯同一个错 |
+| 7 | **蒸馏上提** | 高频坑提炼为宪法一行规则；**触发次数必须被计数** | 每次都要重读长文 |
+| 8 | **点火优先** | 没有接入锚点，整套系统不会被触发（见 §4） | 一切设计空转 |
+
+---
+
+## 3. 结构
+
+### 3.1 六层
+
+| 层 | 管什么（定义权归属） | 变化频率 | 典型文件 |
+|---|---|---|---|
+| **L0 宪法与关卡** | 项目身份、硬约束、架构红线、人审关卡 | 几乎不变 | `CONSTITUTION.md` |
+| **L1 地图** | 代码地图、模块边界、依赖方向、环境、契约真源 | 低 | `ARCHITECTURE.md`、`contracts/`、`env/` |
+| **L2 记忆** | 决策记录、坑库、反模式、术语表 | 增量为王 | `pitfalls/`、`decisions/`、`GLOSSARY.md` |
+| **L3 执行** | 现在做什么、卡在哪、下一步、交接 | 每次会话都动 | `NOW*.md`、`NOW-history/` |
+| **L4 技能** | 可复用操作手册（跑测试 / 发版 / 接内部服务） | 中 | `skills/*.md` |
+| **L5 校验** | 一致性检查、质量门、CI gate | 低 | `checks/` |
+
+**层间规则（v2 修正）**：六层是"事实类型"的分区，不是引用限制。
+
+- 引用**可以跨层**，但必须是指针（`@路径` 或 markdown 链接），**不得复制内容**，不得形成循环引用；
+- 分配权单向：L0 红线 > L1 契约 > 其余层只能引用上层定义，不得重新定义。
+
+### 3.2 目录结构
+
+```
+keel/
+├── INDEX.md                  # 唯一入口 ≤100 行（检索协议 + 路由 + project-state + keel-version）
+├── CONSTITUTION.md           # L0 宪法：红线 + 人审关卡
+├── ARCHITECTURE.md           # L1 代码地图 + 依赖方向
+├── GLOSSARY.md               # L2 术语表
+├── NOW.md                    # L3 当前焦点 ≤60 行（并行时 NOW-<stream>.md，见 §5.5）
+├── NOW-history/              # 冷区：NOW 历史归档（YYYY-MM-DD-焦点.md）
+│
+├── contracts/                # L1 契约真源（INDEX.md + *.schema.* + _template.schema.json）
+├── env/                      # L1 环境（INDEX.md + setup.md：依赖锁、密钥来源、配额、mock）
+├── skills/                   # L4 操作手册（INDEX.md + _template.md + *.md）
+├── pitfalls/                 # L2 坑库（INDEX.md 表格 + <scope>/ 子目录 + _template.md）
+├── decisions/                # L2 决策记录（INDEX.md + _template.md + 0001-*.md）
+├── checks/                   # L5 校验（keel-lint.sh + budget.env + rules.md
+│                             #            + install-hooks.sh + test-lint.sh/.py
+│                             #            + hooks/：版本化的 pre-commit / commit-msg）
+└── archive/                  # 冷区：已失效内容（不进索引正文）
+```
+
+### 3.3 冷热区
+
+- **热区 = 工作区**：除冷区外的全部内容。索引、校验、陈旧判定都作用于热区。
+- **冷区 = `archive/` + `NOW-history/`**：已失效阶段、过时方案、历史交接。规则：
+  1. 不进任何索引正文，只在 `INDEX.md` 底部留一行指针；
+  2. lint 对冷区只做**死链检查**（其余检查豁免）；
+  3. **检索时必须显式排除**（`grep --exclude-dir=archive --exclude-dir=NOW-history`，见 §6.1 / §8）——否则冷区会挤占恒定预算；
+  4. 内容没丢，只是不占位；
+  5. **空目录不被 git 跟踪**：`archive/` 与 `NOW-history/` 里必须各放一个 `.gitkeep`——否则新 clone 的仓库一跑 lint 就是两条死链（`INDEX.md` 的冷区指针指向不存在的目录）。这是 §12.1 "第 0 天"里唯一容易漏掉的一步。
+
+### 3.4 命名与豁免
+
+- 坑库文件名 = 关键词（`connection-pool-exhausted.md` ✅；`2026-09-12-note.md` ❌）；
+- 其余文件用 kebab-case 英文名；日期只允许出现在冷区归档名里；
+- 并行工作流用 `NOW-<stream>.md`；域目录超 20 个文件时按主题再分层，**但只允许一层**（路由深度上限 2 级，见 §6.3）——再超就该往上"提炼"，而不是继续往下分；
+- **唯一豁免**：`_template*` 文件豁免 frontmatter / 孤儿 / 陈旧 / 三段式检查（尺寸与死链照查）。
+
+### 3.5 拓扑（单仓库 / monorepo）
+
+**一个 Keel 管一个"发布单元"，不是管一棵目录树。** 判定口诀：
+
+> **这条事实，另一个服务也会踩到吗？** 会 → 放根 `keel/`；不会 → 放该服务自己的 `keel/`。
+
+- **单仓库单服务**：仓库根一个 `keel/`；
+- **monorepo 多服务**：根 `keel/` 管全仓共用的事实（宪法、术语、跨服务契约、流程），各服务目录下各放一个 `keel/`，其 INDEX 用 `scope` 前缀区分（如 `api-*`、`web-*`）；
+- 跨 keel 引用一律用相对指针（`@../../keel/GLOSSARY.md`），仍然**只允许指针、不允许复制**（§3.1）；
+- lint 逐层跑：`for d in keel */keel; do bash keel/checks/keel-lint.sh "$d"; done`。
+
+> 反例（要避免的形态）：把每个服务的坑都堆进根 `keel/pitfalls/`——根索引会被撑爆，而服务自己反而查不到；或者反过来，把术语表和宪法在 5 个服务里各抄一份，然后各自漂移。
+
+---
+
+## 4. 接入：先点火（P0）
+
+> **不做这一节，Keel 等于不存在**：检索协议写在 INDEX.md 里面，但 AI 不会凭空知道去读它。协议在门内，钥匙必须在门外。
+
+### 4.1 门外锚点（就一句话）
+
+在 AI 工具的规则入口放这一句（**Keel 之外只允许存在这一句**，其余规则一律在 INDEX.md 内，避免第二个真源）：
+
+```
+任何任务开始前，先读 keel/INDEX.md 与其中指向的 NOW.md，并遵守 INDEX.md 里的检索协议。
+```
+
+> 这一句由 lint 检查（§9.1-10）：在 `CLAUDE.md` / `AGENTS.md` / `.cursorrules` / `.cursor/rules/` 里找不到**原文**（或原文被改写）即 fail。**"点火"从此也是机器验的**——v2 把点火列为 P0 却没有任何检查，等于把整套系统的开关交给了自觉。
+
+### 4.2 落点
+
+| 环境 | 落点 |
+|---|---|
+| Claude Code / 通用 CLI agent | 项目根 `AGENTS.md` 首行（跨工具事实标准）；Claude Code 亦可写 `CLAUDE.md` |
+| Cursor | `.cursor/rules/keel.mdc`（`.cursorrules` 是旧格式，仍兼容） |
+| 自建 Agent | 系统提示 preamble 的前三条之内 |
+| 支持 MCP 的客户端 | 把 INDEX + NOW 暴露成 **MCP resource / 只读工具**——让"必读"变成协议动作，而不是提示词里的礼貌请求 |
+| 无 shell 的聊天型 AI | 降级模式：把 INDEX.md + NOW.md 手动粘入上下文（§4.3） |
+
+> 上面这些落点**由 lint 逐个探测**（§9.1-10）：任何一个文件里包含 §4.1 原文即算点火成功。
+
+### 4.3 降级模式说明
+
+Agent 没有 shell / grep 能力时，"检索协议"退化为逐级手动展开：INDEX → 域索引 → 条目。恒定加载目标不变，只是检索变慢——**而且没有任何机制能阻止它多读**。所以这一类环境优先改用 MCP resource（上表第 4 行），把"读多少"重新交还给协议。
+
+---
+
+## 5. 各层规范
+
+### 5.1 入口层 `INDEX.md`（唯一必读）
+
+`INDEX.md` 是全系统**唯一被强制读取**的文件（§7.2 的固定成本），承载检索协议、路由表、项目状态三样东西。它此前只有"≤100 行"的约束，没有内容规格——入口没有规格，等于入口不存在。因此固定如下：
+
+```markdown
+---
+scope: meta
+status: active
+last-verified: 2026-09-29
+keywords: [索引, 入口, 路由]
+keel-version: 2.1.0
+project-state: building     # exploring | architecture-locked | building | frozen（§5.2）
+---
+
+# keel · INDEX
+
+## 检索协议
+（§8 原文照抄，不得改写、不得精简）
+
+## 路由（scope → 入口）
+| scope | 一句话 | 入口 |
+|---|---|---|
+| meta | 宪法 / 地图 / 术语 | [CONSTITUTION.md](CONSTITUTION.md) · [ARCHITECTURE.md](ARCHITECTURE.md) |
+| now | 当前焦点与交接 | [NOW.md](NOW.md) |
+| db | 数据库 / 连接 / 迁移 | [pitfalls/INDEX.md](pitfalls/INDEX.md) |
+| … | | |
+
+## 冷区指针（只此一行）
+[archive/](archive/) · [NOW-history/](NOW-history/)
+```
+
+三条硬规则：
+
+1. **路由表就是 scope 一览表**。新增 scope 必须在此加一行；§10.1 第 3 步的"定位 scope"由此有据可依，**不允许靠猜**。
+2. **`project-state` 只写在这里**。它是 `frozen` 期契约冻结（§5.2）的唯一开关，必须待在必读路径上——写在 `CONSTITUTION.md` 里 AI 看不到。
+3. 路由表逼近 100 行时，走 §7.5 的降级路径（按层分组 → 二层路由），不得直接顶破预算。
+
+### 5.2 L0 宪法层 `CONSTITUTION.md`
+
+不是"最佳实践建议"，是**违反就打回**。
+
+```markdown
+# CONSTITUTION
+
+## 身份
+本项目是 <项目名>，技术栈 <...>，目标 <一句话>，owner <谁>。
+
+## 硬约束（违反即打回）
+1. 禁止跨层调用：<模块A> 不得 import <模块B>
+2. 禁止在客户端存储任何密钥 / token；env/ 只记录来源，不记录值
+3. 契约只能定义在 contracts/，其他位置不得重复定义
+4. 单次会话 Keel 加载量 ≤5k token（见 @INDEX.md）
+
+## 人审关卡（AI 不得自行决定）
+| 改动类型 | 审批 | 留痕 | 时限 |
+|---|---|---|---|
+| 资金 / 支付 / 退款 | owner + 跨职能一人（双签） | decisions/ + PR | 24h |
+| 权限 / 鉴权 / 数据删除 | owner | PR + decisions/（删除类必记） | 48h |
+| contracts/ 契约变更 | owner + 契约 owner | decisions/ | 24h |
+| 引入新第三方依赖 | owner | decisions/ | 48h |
+| frozen 期任何契约改动 | 例外通道：双签 + 记例外 | decisions/ | 24h |
+
+> 审计轨迹 = git 历史 + decisions/；不另建审计系统。
+>
+> **时限怎么落地**（否则 24h / 48h 只是装饰）：采用**登记制**，不新建审批系统。审批一挂起，当场写进 `NOW*.md` 的阻塞表（卡在谁 / 解锁条件 / 绕行三件套齐全）；表中的"时限"= 从登记到结论的最长时长。超时未决的，由 §11 的双周回顾统一统计并升级（找上级 owner），**同一件事不允许在阻塞表里挂过两个回顾周期**。
+
+## 项目状态机
+exploring → architecture-locked → building → frozen
+
+- **当前状态的唯一存储位置 = `INDEX.md` frontmatter 的 `project-state`**（§5.1 规则 2）。本节只定义状态与规则，不存状态；
+- frozen 期契约冻结，只允许"最小修复"，且不得新增契约面（字段 / 端点）；`frozen` 期间新增 `contracts/**` 文件由 lint 直接 fail（§9.1-11）；
+- 冻结期例外决策每月回顾：例外记在 `decisions/`，且**必须同时带 `type: exception` 与 `created: YYYY-MM-DD`**（缺 `created` 由 lint 直接 fail），由 lint 按月计数（§9.1-11）；**单月 >2 次例外，强制退回 building 重新评审**。
+```
+
+### 5.3 L1 地图与契约
+
+- `ARCHITECTURE.md`：模块边界、依赖方向、关键数据流——只画现状，不写愿望；
+- `contracts/`：API / 类型 / 事件的**唯一真源**（SSOT），修改走人审关卡；
+- `env/`：依赖锁、密钥**来源**与获取方式（禁写值）、配额、mock 约定。
+
+> 这一层三件（`ARCHITECTURE.md` / `contracts/` / `env/`）的规格与骨架见 §5.7.1–§5.7.3。
+
+### 5.4 L2 坑库
+
+强制三段式，**缺任一段视为不合规**（lint fail）：
+
+```markdown
+---
+scope: db
+status: active          # active | distilled（已上提宪法） | archived（已失效，移入 archive/）
+severity: P1            # P0–P3，定义见下
+last-verified: 2026-09-29
+triggers: 0             # 每被触发一次 +1；≥3 由 lint 提醒蒸馏
+keywords: [连接池, 超时, 连接池耗尽, connection pool]
+---
+
+## 症状
+压测下接口大面积 500，日志报 `connection pool exhausted`。
+
+## 根因
+DAO 层在循环内新建连接，未走连接池单例；连接数上限 20，QPS>50 即耗尽。
+
+## 正解
+- 连接必须走全局池，禁止循环内建连
+- 池大小 = CPU 核数 × 2 + 有效磁盘数
+- 超时时间必须显式设置，禁用默认 0（无限等待）
+```
+
+严重度定义：
+
+| 级别 | 定义 | 例 |
+|---|---|---|
+| P0 | 资金 / 数据 / 安全损失，或不可逆 | 重复退款、数据误删 |
+| P1 | 主流程阻断 | 连接池耗尽、构建失败 |
+| P2 | 局部返工 | 生成物漂移、契约不一致 |
+| P3 | 效率与体验 | 报错难懂、路径绕 |
+
+### 5.5 L3 `NOW*.md` 会话交接契约
+
+**这是 AI 开发最大隐形浪费的解药。** 每次会话结束必须覆盖重写（不是追加）：
+
+```markdown
+---
+scope: now
+status: active
+last-verified: 2026-09-29
+updated: 2026-09-29
+keywords: [焦点, 交接]
+---
+
+# NOW · main
+
+## 当前焦点
+<一句话：正在做什么>
+
+## 本轮完成
+- [x] <做了什么>
+
+## 未完成 / 半途
+- [ ] <什么没做完，做到哪一步>
+
+## 下一步（按优先级）
+1. <下一步>
+
+## 阻塞
+| 卡在 | 解锁条件 | 绕行 |
+|---|---|---|
+| <谁/什么> | <明确条件> | <方案 / 无> |
+
+## 本轮新发现的坑
+- <文件名 + triggers 初值；未登记则本轮不算完成>
+```
+
+阻塞必须写**三件事**：卡在谁/什么、解锁条件、有无绕行。缺"解锁条件"，AI 会自作主张绕路。
+
+**归档时机（默认单 `NOW.md` 也必须执行）**：**先归档，再重写**——覆盖之前把上一轮内容落到 `NOW-history/<YYYY-MM-DD>-<焦点>.md`，日期取被替换那一轮的 `updated`。
+
+- 不归档就重写 = 历史当场蒸发，§11 的"平均阻塞时长"从此再也算不出来；
+- 这是流程规则（脚本判不了"你归档了没"），所以配一条兜底：`NOW.updated` 超 7 天 → lint ⚠️（§9.1-12），提示"这个会话可能没写回"。
+
+**并发约定**：默认单文件、单一写者（当前会话独占）；多分支 / 多 agent 并行时按工作流拆 `NOW-<stream>.md`（如 `NOW-api.md`），并在 INDEX 登记；stream 完结后内容归档到 `NOW-history/`。
+
+**写冲突守卫**（覆盖重写会静默丢内容，所以必须成文）：
+
+1. **开工前**跑 `git status`：若 `NOW*.md` 已有未提交改动，说明上一个会话没走完 §10.3 清单——先归档再接手，不要直接改；
+2. 需要并行时**开工前**就拆 `NOW-<stream>.md` 并在 `INDEX.md` 登记，**不允许事后拆**（事后拆必然要合并两份历史）；
+3. 真的发生覆盖事故，按原则 6 处理：登记 `pitfalls/`（scope: meta）并复盘——**"被抓到的坑"正是坑库的原料**。
+
+### 5.6 L4 技能层
+
+每个 skill 是写给 AI 看**可复用操作手册**，格式固定：
+
+```markdown
+---
+name: run-tests
+scope: meta
+status: active
+last-verified: 2026-09-29
+keywords: [测试, 验证]
+trigger: 需要验证改动是否破坏既有行为
+---
+
+## 前置
+<必须先具备什么>
+
+## 步骤
+1. ...
+
+## 失败分支
+- 报 X → 原因通常是 Y → 见 @../pitfalls/build/xxx.md
+
+## 验证标准
+
+<什么算成功>
+```
+
+### 5.7 按需层的规格与骨架（§12.1 之外的层）
+
+这五类**不进 MVP**：它们是从真实痛点长出来的，提前造只会变成摆设（§12.1）。
+但一旦要加，形态固定如下。分工与 §6.2 同一条原则：**规格在这里判死，教学注释在各目录的 `_template*` 里**——
+文档不重复模板的逐行解释，模板不重复文档的硬要求。
+
+#### 5.7.1 L1 地图 `ARCHITECTURE.md`
+
+**硬要求**：只写现状，不写愿望（愿望只允许写在宪法"身份"段）；必须有"模块表 + 依赖方向矩阵"；**不复制任何契约字段**，只指向 `contracts/`。
+依赖方向矩阵就是 `CONSTITUTION.md` 硬约束 1 的判据——**改矩阵等于改红线，走人审关卡**。
+
+```markdown
+| 模块 | 一句话职责 | 目录 | owner |
+|---|---|---|---|
+| <api> | <对外入口> | `<src/api/>` | <谁> |
+
+| 从 ↓ 到 → | api | domain | infra |
+|---|---|---|---|
+| **api** | — | ✅ | ❌ |
+| **domain** | ❌ | — | ✅ |
+```
+
+> 用矩阵不用图：加模块时加一行一列，比重画一张图便宜，而且能逐格判死（图判不了）。
+
+#### 5.7.2 L1 契约 `contracts/`
+
+**硬要求**：契约（API / 类型 / 事件）**只能定义在这里**（硬约束 3，别处只能引用）；`INDEX.md` 是纯表格（域索引规则，§6.2）；契约变更走人审关卡（owner + 契约 owner / `decisions/` / 24h）；**`frozen` 期不得新增契约文件**（§9.1-11）。
+格式不限（JSON Schema / OpenAPI / Protobuf 皆可），但**必须自带版本与字段级语义**——否则 AI 只能看到字段名，猜不出含义。
+
+| 契约（唯一真源） | 类型 | 版本 | → 文件 |
+|---|---|---|---|
+
+> 契约漂移检查**不由 lint 判定**（它不懂你的技术栈）：在 `checks/rules.md` 声明项目自己的命令，由 CI 串联（§9.2）。
+
+#### 5.7.3 L1 环境 `env/`
+
+**硬要求**：只记**来源与获取方式**，**永不记录值**（硬约束 2）；`INDEX.md` 纯表格 + `setup.md`（依赖锁 / 密钥来源 / 配额 / mock 约定）。
+
+| 变量名 | 来源 | 谁有权限 | 怎么拿到 |
+|---|---|---|---|
+| `<API_KEY>` | <密码管理器 / KMS / 平台密钥管理> | <谁> | <步骤，不含值> |
+
+> 写了值 = 违反硬约束 2，而且 **git 历史里永远擦不掉**——这是少数"删了也还在"的位置。
+
+#### 5.7.4 L2 术语表 `GLOSSARY.md`
+
+**硬要求**：术语的唯一真源；**必须有"禁止写法"列**——术语混用的本质是"同一概念多种写法并存"，
+只写正解、不写禁止写法，`rules.md` 里那条 grep 规则就无从下手，这张表也就退化成一本字典。
+同一术语的写法之争反复发生（同一坑触发 ≥3 次）时，**上提为宪法的一行硬约束**，而不是继续加表行（§7.4 蒸馏）。
+
+| 术语（唯一写法） | 禁止写法 | 一句话定义 | 备注 |
+|---|---|---|---|
+| <订单> | <order / 单子 / 定单> | <用户提交的一次购买请求> | <代码里用 `Order`> |
+
+#### 5.7.5 L2 决策记录 `decisions/`
+
+**硬要求**：`INDEX.md` 纯表格；文件名 `0001-<slug>.md`（四位序号递增，日期只允许出现在冷区归档名里）；
+**ADR 定稿即不可变**——要改就再写一篇、互相写 `superseded-by`（§9.4）；
+**必须写"被否掉的选项"与"代价"**，只写好处的 ADR 是宣传稿。
+走了 frozen 例外通道的，额外带 `type: exception` 与 `created: YYYY-MM-DD`，由 lint 按月计数（§9.1-11）。
+
+```markdown
+# 0001 <决策标题>
+## 背景   ← 什么情况下必须做这个决定
+## 决定   ← 一句话说完最好
+## 被否掉的选项   ← 表格：选项 / 为什么没选（ADR 最值钱的部分，防"半年后又有人提同样方案"）
+## 后果   ← 好处 + **代价**（缺代价就不算决策记录）
+```
+
+> ADR 豁免 `last-verified` 陈旧检查（§9.4）：它的时效靠"被谁取代"表达，不靠日期——
+> 给不可变文档刷日期，只会产出永久假告警，而假告警会让整套告警机制被无视。
+
+---
+
+## 6. 可检索性
+
+### 6.1 结构化头（每个 md 必带）
+
+| 字段 | 值域 | 说明 |
+|---|---|---|
+| `scope` | db / api / auth / build / finance / meta … | 检索主键，目录名即 scope |
+| `status` | active / distilled / archived | 生命周期 |
+| `last-verified` | YYYY-MM-DD | **陈旧判定的唯一基准**（不用文件 mtime） |
+| `keywords` | [中英混合] | 供 `grep` 命中 |
+| 角色字段 | pitfall：`severity`、`triggers`；skill：`trigger`；NOW：`updated` | 由 lint 强制 |
+
+唯一豁免：`_template*`（见 §3.4）。值域（`status` / `severity` / 日期格式 / `keywords` 非空）由 lint 强制，见 §9.1-6。
+
+**frontmatter 按 YAML 解析**：`key: value   # 注释` 里的行内注释会被剥掉（要求 `#` 前有空白），因此 §5.2 / §5.3 模板里那些注释是合法的。**别在值里塞 `#`**，它之后的内容都会被当注释——这是唯一一处"看起来能用、实际被截断"的地方。
+
+检索方式：`grep -rl "连接池" keel/ --exclude-dir=archive --exclude-dir=NOW-history` —— 秒中，且冷区不进结果（§3.3 规则 3）。**漏掉 `--exclude-dir` 会直接击穿 §7.2 的预算账本。**
+
+### 6.2 一行索引化
+
+`pitfalls/INDEX.md` **只允许是表格，不允许放正文**：
+
+> **规则泛化（v3）**：**任何域索引 `*/INDEX.md` 都只允许是表格行**，连 HTML 注释也不行；
+> **根 `INDEX.md` 是唯一例外**——它的内容是 §5.1 规定的那三样（检索协议 + 路由表 + 冷区指针）。
+> 那么"怎么填"的说明写在哪？**写在同目录的 `_template.md` 里**。
+> 一句话：**索引负责定位，模板负责教怎么填**；两者混在一起，索引就不再是可扫的路由表。
+
+```markdown
+| 症状（一行） | scope | 严重度 | → 文件 |
+|---|---|---|---|
+| 压测下 DB 连接耗尽 | db | P1 | [conn-pool.md](db/connection-pool-exhausted.md) |
+| 幂等缺失导致重复退款 | finance | P0 | [dup-refund.md](finance/duplicate-refund.md) |
+```
+
+### 6.3 三级路由
+
+```
+INDEX.md             ← 第 1 跳：唯一入口，~1.2k token
+  └─ 域/INDEX.md     ← 第 2 跳：按需加载，~1k token
+       └─ 具体条目   ← 第 3 跳：只读命中的那一个，≤2k token
+```
+
+即"**两跳索引 + 一跳正文**"。**路由深度上限 = 2 级索引**（域目录再分层也只允许一层，见 §3.4）；**绝不允许"读整个目录"**（见 §8 协议第 4 条）。
+
+---
+
+## 7. 上下文预算控制（本项目的生命线）
+
+### 7.1 硬预算表（脚本强制，超限即 fail）
+
+| 对象 | 行数上限 | 字节上限 | 近似 token |
+|---|---|---|---|
+| 根 `INDEX.md` | 100 | 4,500 | ~1.5k |
+| 域 `*/INDEX.md` | 80 | 3,000 | ~1.0k |
+| `NOW*.md` | 60 | 2,400 | ~0.8k |
+| 单条坑 `pitfalls/**` | 30 | 1,200 | ~0.4k |
+| 其余单文档 | 160 | 4,800 | ~1.6k |
+| **任意单行** | — | **360** | ~0.12k |
+| 单目录文件数 | ≤20 | — | — |
+| frontmatter | ≤10 行 | 600 | — |
+
+> **换算基准（v3 改为字节，实测校准）**：UTF-8 中英混排下 **≈3 字节 / token**。三个实测样本分别落在 3.0 / 3.1 / 3.3 字节/token，故取 3 做换算，并**按最坏情况（全中文）定上限**。
+>
+> **为什么放弃"≈12 token/行"**：行数不是 token 的有效代理。实测同一个"≤30 行"的坑条目，短行 ≈0.4k，而每行写满时 ≈3.9k——**差 10 倍**；中文密集的域索引 84 行实测 ≈3.1k，比按 12 token/行 估算高出 3 倍。因此预算改成三约束：**行数**（管形态）、**字节**（管总量）、**单行**（堵住长行）。
+>
+> 代价要说清楚：字节上限按最坏情况取，**纯 ASCII 内容会显得偏紧**（实际只用掉约 1/3 额度）。这是刻意的保守——超限早报，好过预算被静默击穿。
+>
+> **单行上限 360 字节同样计入大小检查**，且 `_template*` 不豁免尺寸。
+>
+> **资产型目录**（`contracts/`、`checks/`、`env/`）常按"一个契约一个文件"增长，同样受 ≤20 约束——撞限时**先按主题分子目录**（`contracts/payment/`、`contracts/user/`），不要靠放宽上限解决；确需放宽，只改 `budget.env` 里的 `MAX_DIR_FILES` 并记一条 ADR。
+>
+> **每季度抽测一次**（找最大的 5 个文件看真实字节/行比）：
+> ```bash
+> for f in $(find keel -name '*.md'); do printf '%s %s\n' "$(wc -c < "$f")" "$f"; done | sort -rn | head -5
+> ```
+> 用"字节 ÷ 3"复核 token 估算，偏差 >30% 就收紧上限（自动化建议见 §11）。
+>
+> **这些数字的唯一真源是 `checks/budget.env`（§9.3）**，本节表格只是它的文档副本；要改预算只改 env 一处，缺该文件 lint 直接 fail。
+
+### 7.2 会话加载账本（写进宪法）
+
+```
+根 INDEX.md（必读）        ≤4,500 字节 ≈1.5k
+当前 NOW*.md（必读）       ≤2,400 字节 ≈0.8k   ← 固定成本 最坏≈2.3k / 典型≈1.9k
+域索引（按需）             ≤3,000 字节 ≈1.0k
+命中条目（按需）           ≤4,800 字节 ≈1.6k   ← 1 份机制文档，或最多 4 条坑
+──────────────────────────────────────────
+上限                      ≈4.9k ≤ 5k（恒定，不随 Keel 体积增长）
+```
+
+**全局口径**：单次会话 Keel 加载总量 **≤15,000 字节**（≈5k token）。上表是单文件上限；同时命中多项时按**字节总和**收敛，不是各自顶格。
+
+### 7.3 超限的三条出路（没有第四条）
+
+1. **拆** —— 垂直按主题切，**不按时间切**（按时间切会把一件事撕成碎片）
+2. **提** —— 反复被验证的共识，上提到宪法 / 术语表，压缩成一行规则
+3. **沉** —— 冷内容进 `archive/`，索引里只留一行指针
+
+### 7.4 蒸馏机制（复利最高的一招）
+
+触发次数被 `triggers` 字段计数后，"蒸馏"从口号变成可计算的流程：
+
+```
+坑被再次命中 → commit message 写 `pitfall: <文件名>` → commit-msg 钩子自动 +1（§10.4）
+        ↓
+triggers ≥ 3 → lint 持续 ⚠️ 提醒
+        ↓
+会话结束流程处理：提炼为宪法一行 + 原文件 status: distilled（细节留存）
+        ↓
+之后日常只加载宪法那一行（~20 token），真踩了才顺着指针点开全文
+```
+
+> 两处机械细节（都实测过，写清楚免得后人当成 bug 去"修"）：
+> ① **这次 +1 落在下一次提交里**：git 在 commit-msg 执行前就已定树（实测 git 2.39.5），钩子只能改工作区与索引，历史晚一步。对"≥3 才提醒"这种粗粒度信号无影响，**不值得为它加机制绕开**。
+> ② **钩子本体版本化在 `keel/checks/hooks/`**，由 `install-hooks.sh` 用 `core.hooksPath` 挂载——不往 `.git/hooks/` 写不可见文件，因此可评审、团队共享、跟着分支走。
+> 反面教材也要写下来：**triggers 一旦改回"会话结束由 AI 自己 +1"，整条蒸馏链路立刻失效**——那是 v2 的做法，也是 v3 修掉的坑之一。
+
+### 7.5 根 `INDEX.md` 的降级路径（唯一不可拆的文件）
+
+`INDEX.md` 是唯一没有"父目录"可以拆的文件，却又同时承载协议 + 路由 + 状态，因此最容易第一个撞上限。它超限时**按顺序**走：
+
+1. **提**：把解释、示例、注记全部移出，只留协议原文 + 路由表 + 冷区指针；
+2. **并**：路由表按**层**合并（L0–L5 各一行），不再逐 scope 展开；
+3. **分层**（最后手段）：拆出 `INDEX-<层>.md`（如 `INDEX-l2.md` 只列 L2 的 scope → 域索引），根 INDEX 只保留"六层指针 + 协议"，深度不得超过二级。
+
+> 顺序不能颠倒。先"拆"会让同一类事实出现两个入口，直接违反 §2 原则 1——**降级路径本身也必须守 SSOT**。
+
+---
+
+## 8. 检索协议（原文写进 `INDEX.md` 开头）
+
+```markdown
+## 检索协议（必须遵守）
+1. 必读：INDEX.md（唯一入口）+ 当前 NOW*.md —— 固定预算 ≤2.3k token（最坏）
+2. 定位：先 grep -rl "关键词" keel/ --exclude-dir=archive --exclude-dir=NOW-history（只出文件名，冷区不参与检索）；命中过多先收窄关键词
+3. 读取：只 read 命中的那一个文件；不够就回到第 2 步换关键词，不得扩大范围
+4. 预算：单次检索输出 ≤100 行；本轮 Keel 加载总量 ≤15,000 字节（≈5k token）
+5. 写回：完成任务必须写回 NOW*.md（新坑登记进 pitfalls/INDEX.md 且 triggers 维护），否则本轮不算完成
+```
+
+> 第 2 条的理由：冷区（`archive/`、`NOW-history/`）内容没丢但不占位，漏掉 `--exclude-dir` 会让检索结果和预算同时失控。
+> 第 4 条的理由：真实会话里超预算最常见的方式不是"读了篇大文档"，而是 grep 命中十几个文件后顺手全读。
+
+---
+
+## 9. 校验（机器守卫）
+
+### 9.1 检查项
+
+| # | 检查 | 级别 |
+|---|---|---|
+| 1 | 大小：行数 / 字节 / 单行字节 / 单目录文件数超限（§7.1） | ❌ fail |
+| 2 | frontmatter：缺失、字段缺失（基础字段 + 角色字段）、行数 >10、字节 >600 | ❌ fail |
+| 3 | **死链**：`@路径` 与 markdown 链接指向不存在的文件（按所在文件目录解析；冷区照查） | ❌ fail |
+| 4 | **孤儿**：热区文档未被任何热区文档按文件名引用 | ❌ fail |
+| 5 | 坑条目三段式（症状 / 根因 / 正解）缺失 | ❌ fail |
+| 6 | **值域**：`status` ∉ {active, distilled, archived}；`severity` ∉ {P0…P3}；`keywords` 为空；`last-verified` 非 `YYYY-MM-DD`；`triggers` 非数字 | ❌ fail |
+| 7 | **登记**：坑文件未出现在 `pitfalls/INDEX.md`；**域索引（`*/INDEX.md`）含非表格正文**（§6.2） | ❌ fail |
+| 8 | **命名**：热区文件名含日期；或含大写 / 下划线 / 空格（§3.4） | ❌ fail |
+| 9 | **循环引用**：`md → md` 引用图存在环（§3.1） | ❌ fail |
+| 10 | **必读与点火**：`INDEX.md` / `CONSTITUTION.md` / `NOW*.md` 缺失；根 INDEX 缺 `keel-version` / `project-state`；§4.1 锚点缺失或与原文不一致 | ❌ fail |
+| 11 | **状态机**：`project-state: frozen` 期间新增 `contracts/**`；单月 `type: exception` 决策 >2 条 | ❌ fail |
+| 12 | 陈旧：`last-verified` 超 30 天；`NOW` 的 `updated` 超 7 天（**豁免类目见 §9.4**） | ⚠️ warn |
+| 13 | 待蒸馏：`triggers ≥ 3` | ⚠️ warn |
+| 14 | **取代关系**：`decisions/*` 的 `superseded-by` 指向不存在的文件 | ❌ fail |
+| 15 | 契约漂移 / 术语混用 | 项目扩展位（§9.2） |
+
+> **孤儿检测是核心。** 文件一多，最常见的不是"太大"，是"再也找不到"。
+> **文档腐烂比没文档更危险**，因为 AI 会信它——所以陈旧判定必须锚在 `last-verified` 这个"人来验证过"的字段上。
+> 第 2 / 6 / 7 / 8 / 9 / 10 / 11 项是 v3 新补的：v2 写了规则却没写检查，属于"声称强制、实则空转"。**规则只要不能被脚本判死，就等于建议。**
+
+### 9.2 扩展检查接口
+
+契约漂移、术语混用这类检查依赖具体技术栈，Keel 内核**不假装能通用实现**：
+
+- 在 `checks/rules.md` 里声明项目自己的命令（如 `npm run check:contracts`、术语 grep 规则）；
+- 由 CI 串联执行；级别（fail / warn）由项目自定。
+
+### 9.3 `checks/keel-lint.sh`
+
+实测版（兼容 macOS 自带 bash 3.2；已通过 36 例故障注入——**28 类 fail**：超行数 / 超字节 / 单行超限 / 目录文件数 / frontmatter 缺失·超行数·超字节 / 字段缺失 / status 值域 / severity 值域 / keywords 为空 / 日期格式 / 缺 triggers / 命名含日期 / 命名含大写 / **域索引含正文** / 索引漏登记 / 引用环 / 缺必读文件 / 缺 keel-version / 缺 project-state / 缺预算真源 / 缺点火锚点 / 死链（含冷区）/ 孤儿 / 三段式缺失 / 例外决策缺 created / superseded-by 指向不存在；**2 类告警**：陈旧 / 蒸馏阈值；**6 类合法基线**：MVP 全绿 / `_template` 三级豁免 / `decisions/` 陈旧豁免 / `stale-check: off` 逃生口 / frontmatter 行内注释 / 模板占位字段不算数。全部零 stderr 噪声）。
+
+> 写这版脚本时实测抓到两个 bash 3.2 的坑，已修并在注释里标了出处：
+> ① **变量后紧跟中文标点必须写成 `${st}）`，不能写 `$st）`**——实测在部分环境下 bash 3.2 会把中文标点的首字节并进变量名，`set -u` 下直接报 `unbound variable`（v2 脚本里 5 处都有这个问题）；
+> ② **BSD / macOS 的 `tsort` 遇环仍然返回 0**，只把 `cycle in data` 写到 stderr（GNU `tsort` 才返回 1），所以环检测必须同时看退出码与 stderr。
+> 这正是 §9 存在的理由：**"机器验的东西，必须先自己验过"**——包括验证脚本自己。
+
+**怎么复现这 36 例**：`keel-starter` 随仓库带自测套件，用例与 §9.1 检查表一一对应（每个用例都标注它对应哪一行）：
+
+```bash
+bash keel/checks/test-lint.sh              # 36 例 + 文档一致性检查
+bash keel/checks/test-lint.sh -v --keep     # 逐例详细输出，并保留临时 fixture 供排查
+```
+
+它同时守住两件事：
+
+1. **每条规则都真的能判死对应故障**——为 §9.1 的每一项造一个"应该被判死"的故障仓库，外加 6 类"应该放行"的合法基线（MVP 全绿 / `_template` 豁免 / `decisions/` 陈旧豁免 / `stale-check: off` / frontmatter 行内注释 / 模板占位字段）；
+2. **随仓库发布的 `keel-lint.sh` 与本文档 §9.3 逐字一致**——只要能在上级目录找到 DESIGN.md 就比对，不一致直接 FAIL。
+
+> **为什么测试也必须进仓库**：规则会腐烂，**验证规则的脚本一样会腐烂**。改了检查项却忘了改用例、改了脚本却忘了改文档，两种漂移都只会表现为"lint 一直绿"——那正是 §9 要防的事。所以：**改 `keel-lint.sh` 必须同时改 `test-lint.py`，否则 CI 红**（§10.4 之四）。
+> 自测本身用 python3 写（fixture 生成与断言更可靠）；`keel-lint.sh` 本体仍然只依赖 bash 3.2+ / awk / sed / find。
+
+预算数字**不在脚本里定义真源**：内置默认值仅作兜底，`checks/budget.env` 才是唯一真源——**缺它直接判 fail**，避免"文档一套、脚本一套"。
+
+```bash
+# checks/budget.env —— 预算唯一真源（§7.1 的表格是它的文档副本）
+MAX_INDEX=100;        BYTES_INDEX=4500         # 根 INDEX.md
+MAX_DOMAIN_INDEX=80;  BYTES_DOMAIN_INDEX=3000  # 域内 */INDEX.md
+MAX_NOW=60;           BYTES_NOW=2400           # NOW*.md
+MAX_PIT=30;           BYTES_PIT=1200           # 单条坑
+MAX_DOC=160;          BYTES_DOC=4800           # 其余单文档
+BYTES_FM=600                                   # frontmatter 字节
+MAX_LINE=360                                   # 任意单行字节
+MAX_DIR_FILES=20                               # 单目录文件数
+STALE_DAYS=30; NOW_STALE_DAYS=7; DISTILL_AT=3
+```
+
+```bash
+#!/usr/bin/env bash
+# keel-lint.sh —— Keel 一致性校验（v3）
+# 用法:  bash keel/checks/keel-lint.sh keel            # 从项目根目录调用
+#        bash checks/keel-lint.sh                     # 在 keel/ 内调用（默认 .）
+# 退出码: 0 = 通过（含 warn）；1 = 存在 fail；2 = keel 目录不存在
+# 口径:  热区 = 全部 md 减去 archive/ 与 NOW-history/；冷区只做死链检查。
+# 依赖:  bash 3.2+ / awk / sed / find / tsort（可选）/ git（仅 frozen 检查用）
+set -uo pipefail
+
+KEEL_DIR="${1:-.}"; KEEL_DIR="${KEEL_DIR%/}"
+[ -d "$KEEL_DIR" ] || { echo "❌ 目录不存在: $KEEL_DIR"; exit 2; }
+
+# ---------- 硬预算默认值（兜底；真源是 checks/budget.env） ----------
+MAX_INDEX=100;        BYTES_INDEX=4500
+MAX_DOMAIN_INDEX=80;  BYTES_DOMAIN_INDEX=3000
+MAX_NOW=60;           BYTES_NOW=2400
+MAX_PIT=30;           BYTES_PIT=1200
+MAX_DOC=160;          BYTES_DOC=4800
+BYTES_FM=600
+MAX_LINE=360
+MAX_DIR_FILES=20
+STALE_DAYS=30
+NOW_STALE_DAYS=7
+DISTILL_AT=3
+
+# §4.1 门外锚点原文（唯一允许存在于 Keel 之外的一句）
+ANCHOR='任何任务开始前，先读 keel/INDEX.md 与其中指向的 NOW.md，并遵守 INDEX.md 里的检索协议。'
+
+fail=0
+fail_msg() { echo "❌ $1"; fail=1; }
+warn_msg() { echo "⚠️ $1"; }
+
+# ---------- budget.env（唯一真源；缺失即 fail，兜底用上方默认值） ----------
+if [ -f "$KEEL_DIR/checks/budget.env" ]; then
+  . "$KEEL_DIR/checks/budget.env"
+else
+  fail_msg "缺预算真源 checks/budget.env（§9.3），已退回内置默认值"
+fi
+
+hot_files() { find "$KEEL_DIR" -name '*.md' -not -path '*/archive/*' -not -path '*/NOW-history/*' 2>/dev/null; }
+all_files() { find "$KEEL_DIR" -name '*.md' 2>/dev/null; }
+rel_of() { printf '%s' "${1#"$KEEL_DIR"/}"; }
+# 取首个 --- 块（v3 修正：不再只扫前 12 行，否则字段放后面会被误判为"缺失"）
+fm_block() { awk 'NR==1 && $0=="---" { f=1; next } f && $0=="---" { exit } f { print }' "$1" 2>/dev/null; }
+fm_end_line() { awk 'NR==1 && $0=="---" { next } /^---$/ { print NR; exit }' "$1" 2>/dev/null; }
+# frontmatter 按 YAML 解析：`key: value   # 注释` 里的行内注释必须剥掉
+# （§5.2 / §5.3 的模板自带注释，不剥就会把注释当成值的一部分，直接误判值域非法）
+# `key: # 注释` 这种"值整个是注释"的写法同样按空值处理（YAML 语义），否则
+# 会得到一个假的非空值——例如占位用的 `superseded-by:` 会被误判成"指向不存在的文件"
+yaml_val() { sed -E "s/^#.*$//; s/[[:space:]]+#.*$//; s/[[:space:]]+$//"; }
+fm_val() { fm_block "$1" | grep -m1 "^$2:" | sed -E "s/^$2:[[:space:]]*//" | yaml_val; }
+to_epoch() { date -j -f "%Y-%m-%d" "$1" +%s 2>/dev/null || date -d "$1" +%s 2>/dev/null || true; }
+
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+# 用临时文件收集结果：兼容 bash 3.2（case 不能直接出现在 $() 内），也避开管道子 shell 吞掉 fail 计数
+deadf="$tmp/dead"; corpus="$tmp/corpus"; longf="$tmp/long"; idxbad="$tmp/idxbad"; edges="$tmp/edges"
+
+echo "keel-lint · $(date '+%Y-%m-%d %H:%M') · 目录=$KEEL_DIR · 热区文档=$(hot_files | wc -l | tr -d '[:space:]')"
+echo "── 1. 预算：行数 / 字节 / 单行 / 目录文件数"
+while IFS= read -r f; do
+  rel=$(rel_of "$f")
+  case "$rel" in
+    */INDEX.md)          lim=$MAX_DOMAIN_INDEX; blim=$BYTES_DOMAIN_INDEX ;;
+    INDEX.md)            lim=$MAX_INDEX;        blim=$BYTES_INDEX ;;
+    NOW*.md|*/NOW*.md)   lim=$MAX_NOW;          blim=$BYTES_NOW ;;
+    pitfalls/*)          lim=$MAX_PIT;          blim=$BYTES_PIT ;;
+    *)                   lim=$MAX_DOC;          blim=$BYTES_DOC ;;
+  esac
+  n=$(wc -l < "$f" | tr -d '[:space:]')
+  b=$(wc -c < "$f" | tr -d '[:space:]')
+  [ "$n" -gt "$lim" ]  && fail_msg "超行数 ${n}>${lim}: $rel"
+  [ "$b" -gt "$blim" ] && fail_msg "超字节 ${b}>${blim}: $rel"
+done < <(hot_files)
+
+# 单行上限：LC_ALL=C 保证 awk 的 length() 按字节而非字符计
+while IFS= read -r f; do
+  LC_ALL=C awk -v R="$(rel_of "$f")" -v L="$MAX_LINE" \
+    'length($0) > L { printf "❌ 单行超限 %d>%d 字节: %s:%d\n", length($0), L, R, NR }' "$f"
+done < <(hot_files) > "$longf"
+if [ -s "$longf" ]; then sed -n '1,10p' "$longf"; fail=1; fi
+
+while IFS= read -r d; do
+  case "$d" in */archive|*/archive/*|*/NOW-history|*/NOW-history/*) continue ;; esac
+  c=$(find "$d" -maxdepth 1 -type f | wc -l | tr -d '[:space:]')
+  [ "$c" -gt "$MAX_DIR_FILES" ] && fail_msg "目录文件超限 ${c}>${MAX_DIR_FILES}: $(rel_of "$d")/"
+done < <(find "$KEEL_DIR" -type d 2>/dev/null)
+
+echo "── 2. frontmatter：存在性 / 字段 / 行数 / 字节"
+while IFS= read -r f; do
+  base=$(basename "$f")
+  case "$base" in _template*) continue ;; esac
+  rel=$(rel_of "$f")
+  if ! head -1 "$f" | grep -q '^---$'; then fail_msg "缺 frontmatter: $rel"; continue; fi
+  end=$(fm_end_line "$f")
+  if [ -z "$end" ]; then fail_msg "frontmatter 未闭合: $rel"; continue; fi
+  nl=$((end - 2))
+  [ "$nl" -gt 10 ] && fail_msg "frontmatter 超行数 ${nl}>10: $rel"
+  nb=$(sed -n "1,${end}p" "$f" | wc -c | tr -d '[:space:]')
+  [ "$nb" -gt "$BYTES_FM" ] && fail_msg "frontmatter 超字节 ${nb}>${BYTES_FM}: $rel"
+  fm=$(fm_block "$f")
+  for k in scope status last-verified keywords; do
+    printf '%s\n' "$fm" | grep -q "^$k:" || fail_msg "frontmatter 缺 $k: $rel"
+  done
+  case "$rel" in
+    */INDEX.md) ;;   # 域索引只查基础字段
+    skills/*)   printf '%s\n' "$fm" | grep -q '^trigger:'  || fail_msg "skill 缺 trigger: $rel" ;;
+    pitfalls/*) printf '%s\n' "$fm" | grep -q '^severity:' || fail_msg "坑条目缺 severity: $rel"
+                printf '%s\n' "$fm" | grep -q '^triggers:' || fail_msg "坑条目缺 triggers: $rel" ;;
+  esac
+  case "$rel" in
+    INDEX.md)   printf '%s\n' "$fm" | grep -q '^keel-version:'  || fail_msg "根 INDEX 缺 keel-version: $rel"
+                printf '%s\n' "$fm" | grep -q '^project-state:' || fail_msg "根 INDEX 缺 project-state: $rel" ;;
+  esac
+done < <(hot_files)
+
+echo "── 3. 值域与格式（status / severity / keywords / last-verified / triggers）"
+while IFS= read -r f; do
+  base=$(basename "$f")
+  case "$base" in _template*) continue ;; esac
+  rel=$(rel_of "$f")
+  fm=$(fm_block "$f"); [ -z "$fm" ] && continue
+  st=$(printf '%s\n' "$fm" | grep -m1 '^status:' | sed -E 's/^status:[[:space:]]*//' | yaml_val)
+  case "${st:-}" in
+    active|distilled|archived|"") ;;
+    *) fail_msg "status 值域非法（${st}）: $rel" ;;
+  esac
+  lv=$(printf '%s\n' "$fm" | grep -m1 '^last-verified:' | sed -E 's/^last-verified:[[:space:]]*//' | yaml_val)
+  if [ -n "${lv:-}" ]; then
+    case "$lv" in
+      [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+      *) fail_msg "last-verified 非 YYYY-MM-DD（${lv}）: $rel" ;;
+    esac
+  fi
+  kw=$(printf '%s\n' "$fm" | grep -m1 '^keywords:' | sed -E 's/^keywords:[[:space:]]*//' | yaml_val)
+  case "${kw:-}" in ""|"[]"|"[ ]") fail_msg "keywords 为空: $rel" ;; esac
+  case "$rel" in
+    pitfalls/*)
+      sv=$(printf '%s\n' "$fm" | grep -m1 '^severity:' | sed -E 's/^severity:[[:space:]]*//' | yaml_val)
+      case "${sv:-}" in
+        P0|P1|P2|P3|"") ;;
+        *) fail_msg "severity 值域非法（${sv}）: $rel" ;;
+      esac
+      tg=$(printf '%s\n' "$fm" | grep -m1 '^triggers:' | sed -E 's/^triggers:[[:space:]]*//' | yaml_val)
+      case "${tg:-}" in
+        ''|*[!0-9]*) [ -n "${tg:-}" ] && fail_msg "triggers 非数字（${tg}）: $rel" ;;
+      esac
+      ;;
+  esac
+done < <(hot_files)
+
+echo "── 4. 命名（kebab-case / 热区禁日期）"
+while IFS= read -r f; do
+  base=$(basename "$f"); rel=$(rel_of "$f")
+  # 固定名豁免：根级入口/地图/宪法/术语/NOW 由 §3.2 定义，不受 kebab-case 约束
+  case "$base" in
+    _template*|INDEX.md|CONSTITUTION.md|ARCHITECTURE.md|GLOSSARY.md|NOW.md|NOW-*.md) continue ;;
+  esac
+  case "$base" in *[A-Z]*)     fail_msg "命名含大写（应 kebab-case）: $rel" ;; esac
+  case "$base" in *"_"*|*" "*) fail_msg "命名含下划线/空格（应 kebab-case）: $rel" ;; esac
+  case "$base" in *[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*) fail_msg "热区文件名含日期: $rel" ;; esac
+done < <(hot_files)
+
+echo "── 5. 域索引：纯表格 / 坑条目登记"
+# 5a. 任何域索引（*/INDEX.md）只允许表格行；根 INDEX.md 例外（它是唯一入口，见 §5.1）
+: > "$idxbad"
+while IFS= read -r x; do
+  xrel=$(rel_of "$x")
+  case "$xrel" in */INDEX.md) ;; *) continue ;; esac
+  awk -v R="$xrel" '
+    NR==1 && $0=="---" { f=1; next }
+    f==1 && $0=="---" { f=0; next }
+    f==1 { next }
+    $0 ~ /^[[:space:]]*$/ { next }
+    $0 !~ /^\|/ { printf "❌ 域索引含非表格正文: %s 第%d行: %s\n", R, NR, substr($0,1,30) }
+  ' "$x"
+done < <(hot_files) >> "$idxbad"
+if [ -s "$idxbad" ]; then sed -n '1,6p' "$idxbad"; fail=1; fi
+# 5b. 坑条目必须登记进 pitfalls/INDEX.md
+if [ -f "$KEEL_DIR/pitfalls/INDEX.md" ]; then
+  while IFS= read -r p; do
+    b=$(basename "$p")
+    case "$b" in INDEX.md|_template*) continue ;; esac
+    grep -qF "$b" "$KEEL_DIR/pitfalls/INDEX.md" || fail_msg "坑条目未登记进 pitfalls/INDEX.md: $(rel_of "$p")"
+  done < <(find "$KEEL_DIR/pitfalls" -name '*.md' 2>/dev/null)
+else
+  fail_msg "缺 pitfalls/INDEX.md"
+fi
+
+echo "── 6. 引用图环检测（md → md；§3.1 禁止循环引用，路由枢纽 INDEX.md 除外）"
+: > "$edges"
+while IFS= read -r f; do
+  from=$(basename "$f")
+  [ "$from" = "INDEX.md" ] && continue
+  {
+    grep -oE '\]\([^)]+\)' "$f" 2>/dev/null | sed -E 's/^\]\(([^) ]+).*/\1/'
+    grep -oE '@[A-Za-z0-9_./-]+\.md' "$f" 2>/dev/null | tr -d '@'
+  } | sort -u | while IFS= read -r link; do
+    case "$link" in http*|mailto:*|"") continue ;; esac
+    t="${link%%#*}"
+    case "$t" in *.md) ;; *) continue ;; esac
+    to=$(basename "$t")
+    # 索引是路由枢纽（人人都指向它、它也指向人人），把它当普通节点必然误报
+    [ "$to" = "INDEX.md" ] && continue
+    [ "$from" = "$to" ] && continue
+    printf '%s %s\n' "$from" "$to"
+  done
+done < <(hot_files) >> "$edges"
+sort -u "$edges" -o "$edges"
+if [ -s "$edges" ]; then
+  if command -v tsort >/dev/null 2>&1; then
+    tsort "$edges" >/dev/null 2>"$tmp/tsort.err"; tsort_rc=$?
+    # 注意：BSD/macOS 的 tsort 遇环仍返回 0，只把 "cycle in data" 写到 stderr；
+    # GNU tsort 返回 1。所以"退出码非 0"和"stderr 非空"两个条件要一起看。
+    if [ "$tsort_rc" -ne 0 ] || [ -s "$tmp/tsort.err" ]; then
+      fail_msg "引用存在环（§3.1 禁止循环引用）: $(head -1 "$tmp/tsort.err")"
+    fi
+  else
+    warn_msg "环境无 tsort，跳过循环引用检查"
+  fi
+fi
+
+echo "── 7. 必读文件与点火锚点"
+for need in INDEX.md CONSTITUTION.md; do
+  [ -f "$KEEL_DIR/$need" ] || fail_msg "缺必读文件: $need"
+done
+[ "$(find "$KEEL_DIR" -maxdepth 1 -name 'NOW*.md' | wc -l | tr -d '[:space:]')" -eq 0 ] && fail_msg "缺必读文件: NOW*.md"
+anchor_ok=0
+for cand in CLAUDE.md AGENTS.md .cursorrules .cursor/rules/keel.mdc; do
+  for pfx in "$KEEL_DIR/.." "$KEEL_DIR"; do
+    [ -f "$pfx/$cand" ] || continue
+    grep -qF "$ANCHOR" "$pfx/$cand" && anchor_ok=1
+  done
+done
+[ "$anchor_ok" -eq 1 ] || fail_msg "点火锚点缺失或与 §4.1 原文不一致（查 CLAUDE.md / AGENTS.md / .cursorrules / .cursor/rules）"
+
+echo "── 8. 死链（@路径 与 markdown 链接，相对所在文件目录）"
+while IFS= read -r f; do
+  dir=$(dirname "$f")
+  {
+    grep -oE '\]\([^)]+\)' "$f" 2>/dev/null | sed -E 's/^\]\(([^) ]+).*/\1/'
+    grep -oE '@[A-Za-z0-9_./-]+\.md' "$f" 2>/dev/null | tr -d '@'
+  } | sort -u | while IFS= read -r link; do
+    case "$link" in http*|mailto:*|"") continue ;; esac
+    t="${link%%#*}"; [ -z "$t" ] && continue
+    [ -e "$dir/$t" ] || echo "❌ 死链: $t  (见 $(rel_of "$f"))"
+  done
+done < <(all_files) > "$deadf"
+if [ -s "$deadf" ]; then cat "$deadf"; fail=1; fi
+
+echo "── 9. 孤儿（热区文档未被任何热区文档引用；INDEX/_template 豁免）"
+while IFS= read -r g; do cat "$g" >>"$corpus" 2>/dev/null; printf '\n' >>"$corpus"; done < <(hot_files)
+while IFS= read -r f; do
+  base=$(basename "$f")
+  case "$base" in INDEX.md|_template*) continue ;; esac
+  grep -qF "$base" "$corpus" || fail_msg "孤儿（未被任何热区文档引用）: $(rel_of "$f")"
+done < <(hot_files)
+
+echo "── 10. 陈旧（last-verified / NOW updated；豁免类目见 §9.4）"
+today=$(date +%s)
+while IFS= read -r f; do
+  rel=$(rel_of "$f")
+  case "$(basename "$f")" in _template*) continue ;; esac
+  case "$rel" in decisions/*) continue ;; esac            # ADR 定稿即不可变，见 §9.4
+  [ "$(fm_val "$f" stale-check)" = "off" ] && continue     # 逃生口，需在 decisions/ 留理由
+  d=$(fm_val "$f" last-verified)
+  if [ -n "$d" ]; then
+    e=$(to_epoch "$d")
+    if [ -n "$e" ]; then
+      age=$(( (today - e) / 86400 ))
+      [ "$age" -gt "$STALE_DAYS" ] && warn_msg "stale(${age}d): $rel"
+    else
+      warn_msg "last-verified 无法解析: $rel ($d)"
+    fi
+  fi
+  case "$rel" in NOW*.md|*/NOW*.md)
+    u=$(fm_val "$f" updated)
+    if [ -z "$u" ]; then fail_msg "NOW 缺 updated: $rel"
+    else
+      e=$(to_epoch "$u")
+      [ -n "$e" ] && { age=$(( (today - e) / 86400 )); [ "$age" -gt "$NOW_STALE_DAYS" ] && warn_msg "NOW 已 ${age}d 未更新: $rel"; }
+    fi ;;
+  esac
+done < <(hot_files)
+
+echo "── 11. 坑条目（三段式 + 蒸馏阈值）"
+while IFS= read -r f; do
+  rel=$(rel_of "$f")
+  case "$rel" in pitfalls/*) ;; *) continue ;; esac
+  case "$(basename "$f")" in INDEX.md|_template*) continue ;; esac
+  for h in "## 症状" "## 根因" "## 正解"; do
+    grep -qF -- "$h" "$f" || fail_msg "坑条目缺失【${h}】: $rel"
+  done
+  t=$(fm_val "$f" triggers)
+  case "${t:-0}" in
+    ''|*[!0-9]*) [ -n "${t:-}" ] && warn_msg "triggers 非数字: $rel" ;;
+    *) [ "${t:-0}" -ge "$DISTILL_AT" ] && warn_msg "待蒸馏（triggers=${t} ≥ ${DISTILL_AT}）: $rel" ;;
+  esac
+done < <(hot_files)
+
+echo "── 12. 状态机（frozen 契约冻结 / 例外计数）"
+IDX="$KEEL_DIR/INDEX.md"
+if [ -f "$IDX" ]; then
+  ps=$(fm_val "$IDX" project-state)
+  case "${ps:-}" in
+    frozen)
+      if command -v git >/dev/null 2>&1 && git -C "$KEEL_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+        added=$(git -C "$KEEL_DIR" log --since="$(date '+%Y-%m-01')" --diff-filter=A --name-only --pretty=format: 2>/dev/null | grep -E '(^|/)contracts/' | grep -v '/_template' | sort -u)
+        [ -n "$added" ] && fail_msg "frozen 期新增契约文件（§5.2 禁止）: $(printf '%s' "$added" | tr '\n' ' ')"
+      fi ;;
+    exploring|architecture-locked|building) ;;
+    "") fail_msg "project-state 缺失或为空: INDEX.md" ;;
+    *)  fail_msg "project-state 值域非法（${ps}）: INDEX.md" ;;
+  esac
+fi
+if [ -d "$KEEL_DIR/decisions" ]; then
+  mon=$(date '+%Y-%m'); exc=0
+  while IFS= read -r d; do
+    case "$(basename "$d")" in _template*) continue ;; esac   # 模板不是真实记录（§3.4 豁免）
+    [ "$(fm_val "$d" type)" = "exception" ] || continue
+    made=$(fm_val "$d" created)
+    if [ -z "${made:-}" ]; then fail_msg "例外决策缺 created 字段: $(rel_of "$d")"; continue; fi
+    case "$made" in "$mon"*) exc=$((exc + 1)) ;; esac
+  done < <(find "$KEEL_DIR/decisions" -name '*.md' 2>/dev/null)
+  [ "$exc" -gt 2 ] && fail_msg "本月例外决策 ${exc}>2，强制退回 building（§5.2）"
+fi
+# 取代关系：superseded-by 必须指向存在的文件（ADR 靠"被谁取代"表达时效，而非 last-verified）
+while IFS= read -r d; do
+  case "$(basename "$d")" in _template*) continue ;; esac     # 模板里的占位值不算数
+  sb=$(fm_val "$d" superseded-by)
+  [ -n "${sb:-}" ] || continue
+  [ -e "$(dirname "$d")/$sb" ] || fail_msg "superseded-by 指向不存在的文件（${sb}）: $(rel_of "$d")"
+done < <(find "$KEEL_DIR/decisions" -name '*.md' 2>/dev/null)
+
+echo "──"
+if [ "$fail" -eq 0 ]; then echo "✅ keel-lint 通过"; else echo "❌ keel-lint 失败（见上方 ❌ 项）"; fi
+exit "$fail"
+```
+
+### 9.4 陈旧豁免（不可变文档）
+
+陈旧判定的前提是"这个文件还会被读、且内容可能已经过期"。有一类文档天然不满足这个前提，硬套 `last-verified` 只会产出**永久假告警**——而假告警会让整套告警机制被无视，比漏报更危险。
+
+| 类目 | 为什么豁免 | 改用什么表达时效 |
+|---|---|---|
+| `decisions/*`（ADR） | 定稿即不可变；"改"指的是被新决策取代，不是内容腐坏 | `superseded-by: <文件名>`（lint 检查其存在，§9.1-14） |
+| `archive/*`、`NOW-history/*` | 冷区本就豁免全部检查（§3.3 规则 2） | —— |
+| 任意文件加 `stale-check: off` | 逃生口：确属长期稳定的参考事实 | 须在 `decisions/` 记一条理由，否则属于掩盖腐烂 |
+
+> `last-verified` 的语义是"**有人复核过**"，不是"文件被碰过"。所以它在"增量为王"的层（`pitfalls/`、`skills/`、`NOW`）上是有效信号，在不可变层上只是噪声。
+
+---
+
+## 10. 工作流
+
+### 10.1 会话开始
+
+```
+1. 读 INDEX.md（唯一入口，内含检索协议）
+2. 读 NOW*.md → 拿到当前焦点、下一步、阻塞
+3. grep 定位本次任务相关的 scope 索引 → 加载
+4. 只 read 命中的具体条目
+```
+
+### 10.2 会话进行中
+
+- 遇到阻塞 → **立即**写进 NOW 阻塞表（三要素齐全）
+- 踩到坑 → **立即**建 `pitfalls/` 条目（三段式 + `triggers: 0`），同步在 `pitfalls/INDEX.md` 加一行
+- 做了架构决策 → 在 `decisions/` 记 ADR；改了契约 → 走人审关卡
+- 发现某文件要超预算 → 当场拆 / 提 / 沉（§7.3），不要"下次再说"
+
+### 10.3 会话结束（强制闭环清单）
+
+- [ ] `NOW*.md` 已覆盖重写：焦点 / 完成 / 未完成 / 下一步 / 阻塞 / 新坑
+- [ ] 新坑已登记：文件 + `pitfalls/INDEX.md` 索引行（否则本轮不算完成；lint 会查，§9.1-7）
+- [ ] 被再次命中的坑：commit message 已带 `pitfall: <文件名>`（`commit-msg` 钩子自动 +1，**不再手工计数**）
+- [ ] 改动过的文档：`last-verified` / `updated` 已刷新
+- [ ] 跑了 `keel-lint.sh`，无 ❌
+
+### 10.4 闭环钩子（**没有钩子，闭环就退化为自觉**）
+
+| 层 | 触发时机 | 执行内容 |
+|---|---|---|
+| ① 工具侧规则（§4 锚点） | 每次任务开始 | AI 按协议读取与写回；**锚点存在性与原文一致性由 lint 检查**（§9.1-10） |
+| ② pre-commit | `keel/` 下 md 有变更时 | `bash keel/checks/keel-lint.sh keel`，0 fail 才放行 |
+| ③ commit-msg | 每次提交 | 扫描 message 里的 `pitfall: <文件名>`，自动给对应条目 `triggers` +1 并 stage（§7.4） |
+| ④ CI | push / PR | lint 必须 0 fail；**自测必须 36/36**（`bash keel/checks/test-lint.sh`，§9.3）；PR 模板含"写回确认"勾选项 |
+| 兜底 | —— | `NOW.updated` 超 7 天 → lint ⚠️（提示会话可能未写回） |
+
+**【铁律】①②③④ 缺一，强制闭环就不成立。** 钩子由 `keel-starter` 的 `checks/install-hooks.sh` 落地（§12.1）——**只在文档里写钩子、不安装钩子，等于没有钩子**；v2 的"铁律"与 MVP 五件套自相矛盾（MVP 里既没有钩子也没有 CI），v3 已把四件事一起并入 MVP。
+
+> 落地方式：钩子本体版本化在 `keel/checks/hooks/`，`install-hooks.sh` 只把 `core.hooksPath` 指过去——**不往 `.git/hooks/` 写不可见文件**，所以钩子可评审、团队共享、跟着分支走，也比 `.pre-commit-config.yaml` 少一层外部依赖。
+
+---
+
+## 11. 度量与回顾
+
+别让基座变成自我感动，盯三个数（**每个都有采集方式，否则不叫度量**）：
+
+| 指标 | 含义 | 采集方式 | 健康信号 |
+|---|---|---|---|
+| 返工率 | 被 revert / 重做的改动占比 | 每两周：`git log --oneline -i --grep=revert --since='2 weeks ago' \| wc -l` ÷ 同期总提交 | 持续下降 |
+| 坑复发率 | 同一条坑被触发次数 | `pitfalls` 的 `triggers` 汇总（lint 持续提醒 ≥3） | 单坑 ≤1；≥3 立即蒸馏 |
+| 平均阻塞时长 | 阻塞从登记到解锁的时长 | `NOW-history/` 阻塞表（登记 → 解锁日期差） | 缩短 |
+
+**每两周回顾一次**（15 分钟）：读三个数 → 看 lint warn 清单 → 决定下一轮补哪一层 / 哪个 skill。
+
+> 三个数里有两个的可行性依赖前置规则，v3 才补齐：坑复发率依赖 `triggers` 由钩子计数（§10.4 之三），平均阻塞时长依赖 `NOW` 先归档再重写（§5.5）——**指标不可采集，通常不是因为没数据，而是因为上游动作没人做**。
+
+**必须自动化，否则会消失**：三个指标的采集、lint warn 清单、季度抽测，全部挂成定时任务（每两周触发一次提醒，并把上面的命令跑完贴回 `NOW.md`）。**靠"我记得"维持的例会在第三周就会消失**——这和 §10.4 是同一个道理：没有钩子的流程等于建议。
+
+**最后一次自检（本项目自己的验收）**：把本文档 §12 之前的规则抄成一个真实 `keel/`，跑一次 `keel-lint.sh`——出现任何 ❌，就说明文档和脚本又不一致了。
+
+---
+
+## 12. 落地路线
+
+**架构是被真实痛点长出来的，不是一次性设计出来的。**
+
+### 12.1 MVP（当天可用）
+
+```
+keel/
+├── INDEX.md                 # 入口：检索协议 + 路由 + project-state + keel-version
+├── CONSTITUTION.md          # 红线 + 人审关卡
+├── NOW.md                   # 当前焦点 + 交接
+├── pitfalls/                # INDEX.md（表格）+ _template.md + 1 条真实坑
+└── checks/                  # keel-lint.sh + budget.env + rules.md + test-lint.sh/.py
+│                            # + install-hooks.sh + hooks/{pre-commit, commit-msg}
+＋ archive/.gitkeep · NOW-history/.gitkeep   # 空目录不被 git 跟踪（§3.3 规则 5）
+＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 34/34（§10.4 之四）
+＋ PR 模板（.github/pull_request_template.md）——"写回确认"勾选项（§10.4 之四）
+＋ 工具侧锚点 1 句（AGENTS.md 首行）——没有它，上面这些文件不会被读到（§10.4 之一）
+```
+
+**第 0 天五步（缺任一步，MVP 不算落地）**：
+
+1. 展开 `keel-starter`（§12.3），或直接复制 MVP 文件；
+2. 装钩子：`bash keel/checks/install-hooks.sh`（pre-commit + commit-msg）；
+3. 贴 CI 片段，并在项目根写入 §4.1 锚点；
+4. 跑 `bash keel/checks/keel-lint.sh keel`——**第一次自检必须 0 fail**（锚点也在检查范围内，§9.1-10）；
+5. 跑 `bash keel/checks/test-lint.sh`——**必须 36/36**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
+
+**按需层（不进 MVP，痛点到了再加）**——starter 已带骨架，规格见 §5.7，"怎么填"写在同目录的 `_template*` 里：
+
+| 层 | 什么痛了才加 | starter 里的形态 |
+|---|---|---|
+| `contracts/` | 改了一个接口，三个调用方没跟上 | `INDEX.md`（表格）+ 契约 `_template.schema.json`（用 `x-keel-*` 字段自文档化） |
+| `ARCHITECTURE.md` | 有人（或 AI）搞错模块边界 / 依赖方向 | 模块表 + 依赖方向矩阵（**只写现状**） |
+| `GLOSSARY.md` | 同一个概念出现了第二种写法 | 「唯一写法 / 禁止写法」表，同时是术语混用检查的输入 |
+| `decisions/` | 出现"当初为什么这么定"的争论 | `INDEX.md`（表格）+ ADR `_template.md` |
+| `skills/` | 同一个操作第二次被口述 | `INDEX.md`（表格）+ 技能 `_template.md` |
+| `env/` | 有第二个环境，或密钥来源说不清 | `INDEX.md`（表格）+ `setup.md`（**只记来源，不记值**） |
+
+> 加层时别忘了 INDEX.md 路由表——**新 scope 不加行，就是孤儿**（§9.1-4 会判死），而这正是"文件一多就再也找不到"的起点。
+
+### 12.2 迭代节奏
+
+1. 跑两周
+2. 看 AI 在**哪类事上仍然反复出错**、看三个度量指标
+3. 就补哪一层 / 补哪个 skill
+
+### 12.3 分发与升级
+
+- `keel-starter`：模板仓库（MVP 全部文件 + CI 示例 + 锚点片段 + `checks/install-hooks.sh`）；
+- 升级：starter 发版带 CHANGELOG，各仓库按 `keel-version` **增量合并**。文件按三类处理，**不允许"一键覆盖"**：
+
+| 类别 | 文件 | 升级动作 |
+|---|---|---|
+| **纯本地，永不覆盖** | `pitfalls/`、`contracts/`、`decisions/`、`env/`、`archive/`、`NOW-history/` | 完全跳过 |
+| **结构合并** | `INDEX.md` | 只合并 frontmatter 的 `keel-version` 与 §8 检索协议正文；**路由表、`project-state` 保留本地** |
+| **本地优先** | `NOW.md`、`ARCHITECTURE.md`、`GLOSSARY.md`、`CONSTITUTION.md` 的身份与硬约束段 | 有本地改动则不覆盖，只在 `decisions/` 记一条"待人工合并" |
+
+- 版本声明：根 `INDEX.md` frontmatter 的 `keel-version` 字段（lint 强制其存在，§9.1-10）；
+- **破坏性变更**（改检索协议、改预算数字、加 frontmatter 必填字段）须在 `decisions/` 记 ADR，并在 CHANGELOG 里给出迁移命令；
+- 升级本身也要过 §10.4 的钩子：升完跑一次 `keel-lint.sh`，**允许 0 fail 才算升级完成**。
+
+**本项目自己的仓库拓扑**（与 §3.5"一个 Keel 管一个发布单元"同源）：
+
+| 仓库 | 内容 | 可见性 |
+|---|---|---|
+| `keel`（项目仓） | 设计稿 `DESIGN.md` + `keel-starter` 子模块指针 | 规格在这里版本化 |
+| `keel-starter`（发布仓） | 纯模板，**不含设计稿** | 可单独公开/分发 |
+
+- 设计稿**必须进版本管理**：它是唯一真源，只有单副本等于没有备份；`.gitignore` 里不忽略它；
+- 发布仓不含设计稿，所以 `test-lint.sh` 的"脚本与文档逐字一致"检查在那里自动 SKIP（§9.3）；
+- 在项目仓里这条检查**能读到 `DESIGN.md`**——于是"文档与脚本不许漂移"这条不变量终于落在有历史可依的地方；
+- 子模块指针与发布仓 HEAD 必须一致（`git submodule status` 行首不出现 `+`），且**推送顺序恒为：先发布仓、后项目仓**，否则别人 clone 后 `submodule update` 会取不到那个提交。
+
+### 12.4 派生命名
+
+| 层级 | 命名 |
+|---|---|
+| 品牌名 | Keel |
+| 中文名 | 龙骨 |
+| 仓库名 | `keel` / `keel-compliance` |
+| SDK / 包 | `@yourco/keel` |
+| 子模块 | `keel-skill`、`keel-pitfalls`、`keel-checks`、`keel-starter` |
+
+---
+
+## 13. 一句话总结
+
+**全量存、索引化、按需取、机器验、定期蒸馏、先点火。**
+
+Keel 想长到多大就长多大，它是一本书；
+AI 每次只读书里的一页——而目录永远只有两页。
