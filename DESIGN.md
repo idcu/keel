@@ -3,7 +3,8 @@
 > 中文名：龙骨　｜　定位：AI 开发项目的上下文基座 + 轻量合规关卡
 > 一句话：**让 AI 在任何一次会话里，都能以恒定成本拿到正确的上下文。**
 
-> 关于本文档：这是设计稿，不进入运行期加载路径（因此不适用 §7 的行数预算；落地后的规则正文按 §7 拆分）。v2 修复了 v1 的全部规格矛盾，补齐了接入 / 闭环 / 蒸馏计数 / 并发 / 合规五处机制空缺；**v3 把"机器验"回敬给文档自己**——预算从"行数单约束"改成"行数 × 字节 × 单行"三约束（行数不是 token 的有效代理，实测可差 10 倍），把此前"声称由 lint 强制、实则未实现"的 9 项检查真正写进 §9.3，并让入口规格、项目状态、点火锚点全部进入可验证路径。§9.3 的脚本已通过 36 例故障注入实测（28 类 fail 缺陷 + 2 类告警 + 6 类合法基线，零 stderr 噪声）。
+> 关于本文档：这是设计稿，不进入运行期加载路径（因此不适用 §7 的行数预算；落地后的规则正文按 §7 拆分）。v2 修复了 v1 的全部规格矛盾，补齐了接入 / 闭环 / 蒸馏计数 / 并发 / 合规五处机制空缺；**v3 把"机器验"回敬给文档自己**——预算从"行数单约束"改成"行数 × 字节 × 单行"三约束（行数不是 token 的有效代理，实测可差 10 倍），把此前"声称由 lint 强制、实则未实现"的 9 项检查真正写进 §9.3，并让入口规格、项目状态、点火锚点全部进入可验证路径。§9.3 的脚本已通过 38 例故障注入实测（30 例 fail 缺陷 + 2 类告警 + 6 类合法基线，零 stderr 噪声）。
+> **v3.1 的改动集中在一件事上：把还停在"建议"层面的三处承诺变成可执行形式**——孤儿判定改用真实链接图（§9.1-4）、闭环钩子本体进 lint（§9.1-16）、单轮加载量进预算真源并给出命令（§7.2）；另补齐 §4.2 那句悬空的 MCP 落点，并把语义检索短板明确定义为"接入位"而非内核职责（§4.4 / §9.5）。
 > 阅读路线：§1–2 立论 → §3 结构 → **§4 点火（不做这步，其余全部无效）** → §5–8 规范 → §9 校验 → §10–11 运转 → §12 落地。
 
 ---
@@ -144,7 +145,7 @@ keel/
 | Claude Code / 通用 CLI agent | 项目根 `AGENTS.md` 首行（跨工具事实标准）；Claude Code 亦可写 `CLAUDE.md` |
 | Cursor | `.cursor/rules/keel.mdc`（`.cursorrules` 是旧格式，仍兼容） |
 | 自建 Agent | 系统提示 preamble 的前三条之内 |
-| 支持 MCP 的客户端 | 把 INDEX + NOW 暴露成 **MCP resource / 只读工具**——让"必读"变成协议动作，而不是提示词里的礼貌请求 |
+| 支持 MCP 的客户端 | 把 INDEX + NOW 暴露成 **MCP resource / 只读工具**——让"必读"变成协议动作，而不是提示词里的礼貌请求。**实现已随 starter 发布**：`keel/checks/mcp/keel-mcp-server.py`（§4.4） |
 | 无 shell 的聊天型 AI | 降级模式：把 INDEX.md + NOW.md 手动粘入上下文（§4.3） |
 
 > 上面这些落点**由 lint 逐个探测**（§9.1-10）：任何一个文件里包含 §4.1 原文即算点火成功。
@@ -152,6 +153,26 @@ keel/
 ### 4.3 降级模式说明
 
 Agent 没有 shell / grep 能力时，"检索协议"退化为逐级手动展开：INDEX → 域索引 → 条目。恒定加载目标不变，只是检索变慢——**而且没有任何机制能阻止它多读**。所以这一类环境优先改用 MCP resource（上表第 4 行），把"读多少"重新交还给协议。
+
+### 4.4 MCP 只读服务（§4.2 第 4 行的落地）
+
+v2 把 MCP 落点写进了表，却没给实现——于是这一行长期是**设计稿里的承诺**。v3.1 补上最小实现：
+
+```bash
+python3 keel/checks/mcp/keel-mcp-server.py --self-test   # 不开客户端先验证它工作（8 项）
+python3 keel/checks/mcp/keel-mcp-server.py               # 以 stdio 提供服务，自动向上找 keel 目录
+```
+
+暴露三个只读资源：`keel://index`、`keel://constitution`、`keel://now`（并行工作流为 `keel://now/<stream>`）。
+
+边界是刻意画死的，**它不许越界**：
+
+- **只读**：不接受任何写操作——"写回"仍由 §10.3 的会话结束清单负责人承担；
+- **不进内核**：`keel-lint.sh` 不引用它，§9.3"零依赖"的前提不变；本文件因此**不在 §9.1 的检查面内**；
+- **不替代检索**：它只解决"必读三件怎么到手"；定位 scope、命中条目仍走 §8 的 grep 协议；
+- 依赖仅 python3 标准库（与自测套件同一条底线），不开客户端时用 `--self-test` 自证。
+
+> 这一节是"§9 精神"的又一次套用：**写在表里的能力，要么被实现，要么被标注为未实现**；长期悬空的承诺和文档腐烂是同一种病。
 
 ---
 
@@ -519,6 +540,15 @@ INDEX.md             ← 第 1 跳：唯一入口，~1.2k token
 
 **全局口径**：单次会话 Keel 加载总量 **≤15,000 字节**（≈5k token）。上表是单文件上限；同时命中多项时按**字节总和**收敛，不是各自顶格。
 
+> **这一条不再是"自觉"（v3.1）**：上限数字的唯一真源是 `checks/budget.env` 的 `BYTES_SESSION`；
+> 本轮要读多少，由 `checks/load-estimate.sh` 按同一口径算出来并与它比对——
+> **超了直接红**。于是 §8 协议第 4 条从"写在协议里的礼貌请求"变成"可执行的命令"。
+>
+> ```bash
+> bash keel/checks/load-estimate.sh 连接池 超时        # 固定成本 + 命中文件字节，与 BYTES_SESSION 比对
+> bash keel/checks/load-estimate.sh 连接池 超时 --list  # 顺带列出命中文件与各自字节
+> ```
+
 ### 7.3 超限的三条出路（没有第四条）
 
 1. **拆** —— 垂直按主题切，**不按时间切**（按时间切会把一件事撕成碎片）
@@ -569,6 +599,8 @@ triggers ≥ 3 → lint 持续 ⚠️ 提醒
 
 > 第 2 条的理由：冷区（`archive/`、`NOW-history/`）内容没丢但不占位，漏掉 `--exclude-dir` 会让检索结果和预算同时失控。
 > 第 4 条的理由：真实会话里超预算最常见的方式不是"读了篇大文档"，而是 grep 命中十几个文件后顺手全读。
+> 第 4 条不再是空口承诺（v3.1）：它有一个可执行形式——`bash keel/checks/load-estimate.sh <关键词>`，
+> 按完全相同的口径把本轮要读的字节算出来，超过 `budget.env` 的 `BYTES_SESSION` 即返回非零（§7.2）。
 
 ---
 
@@ -581,7 +613,7 @@ triggers ≥ 3 → lint 持续 ⚠️ 提醒
 | 1 | 大小：行数 / 字节 / 单行字节 / 单目录文件数超限（§7.1） | ❌ fail |
 | 2 | frontmatter：缺失、字段缺失（基础字段 + 角色字段）、行数 >10、字节 >600 | ❌ fail |
 | 3 | **死链**：`@路径` 与 markdown 链接指向不存在的文件（按所在文件目录解析；冷区照查） | ❌ fail |
-| 4 | **孤儿**：热区文档未被任何热区文档按文件名引用 | ❌ fail |
+| 4 | **孤儿**：热区文档未被任何热区文档以**链接**引用（真实链接图；v3.1 起"正文提及文件名"不算引用） | ❌ fail |
 | 5 | 坑条目三段式（症状 / 根因 / 正解）缺失 | ❌ fail |
 | 6 | **值域**：`status` ∉ {active, distilled, archived}；`severity` ∉ {P0…P3}；`keywords` 为空；`last-verified` 非 `YYYY-MM-DD`；`triggers` 非数字 | ❌ fail |
 | 7 | **登记**：坑文件未出现在 `pitfalls/INDEX.md`；**域索引（`*/INDEX.md`）含非表格正文**（§6.2） | ❌ fail |
@@ -593,10 +625,13 @@ triggers ≥ 3 → lint 持续 ⚠️ 提醒
 | 13 | 待蒸馏：`triggers ≥ 3` | ⚠️ warn |
 | 14 | **取代关系**：`decisions/*` 的 `superseded-by` 指向不存在的文件 | ❌ fail |
 | 15 | 契约漂移 / 术语混用 | 项目扩展位（§9.2） |
+| 16 | **闭环钩子本体**：`checks/hooks/{pre-commit,commit-msg}` 缺失或不可执行（§10.4 铁律） | ❌ fail |
 
 > **孤儿检测是核心。** 文件一多，最常见的不是"太大"，是"再也找不到"。
 > **文档腐烂比没文档更危险**，因为 AI 会信它——所以陈旧判定必须锚在 `last-verified` 这个"人来验证过"的字段上。
 > 第 2 / 6 / 7 / 8 / 9 / 10 / 11 项是 v3 新补的：v2 写了规则却没写检查，属于"声称强制、实则空转"。**规则只要不能被脚本判死，就等于建议。**
+> 第 16 项是 v3.1 新补的：钩子本体一旦被误删或被 checkout 掉了可执行位，闭环会**静默失效**——而静默失效正是"铁律"最怕的形态。
+> 第 4 项在 v3.1 被重写：旧的"按文件名 grep"是近似算法（正文字符串里偶然同名会漏报、改名会误报），现在按**解析后的链接目标路径**判定。
 
 ### 9.2 扩展检查接口
 
@@ -607,17 +642,17 @@ triggers ≥ 3 → lint 持续 ⚠️ 提醒
 
 ### 9.3 `checks/keel-lint.sh`
 
-实测版（兼容 macOS 自带 bash 3.2；已通过 36 例故障注入——**28 类 fail**：超行数 / 超字节 / 单行超限 / 目录文件数 / frontmatter 缺失·超行数·超字节 / 字段缺失 / status 值域 / severity 值域 / keywords 为空 / 日期格式 / 缺 triggers / 命名含日期 / 命名含大写 / **域索引含正文** / 索引漏登记 / 引用环 / 缺必读文件 / 缺 keel-version / 缺 project-state / 缺预算真源 / 缺点火锚点 / 死链（含冷区）/ 孤儿 / 三段式缺失 / 例外决策缺 created / superseded-by 指向不存在；**2 类告警**：陈旧 / 蒸馏阈值；**6 类合法基线**：MVP 全绿 / `_template` 三级豁免 / `decisions/` 陈旧豁免 / `stale-check: off` 逃生口 / frontmatter 行内注释 / 模板占位字段不算数。全部零 stderr 噪声）。
+实测版（兼容 macOS 自带 bash 3.2；已通过 38 例故障注入——**30 例 fail（覆盖 29 类缺陷）**：超行数 / 超字节 / 单行超限 / 目录文件数 / frontmatter 缺失·超行数·超字节 / 字段缺失 / status 值域 / severity 值域 / keywords 为空 / 日期格式 / 缺 triggers / 命名含日期 / 命名含大写 / **域索引含正文** / 索引漏登记 / 引用环 / 引用环外的**链接图孤儿**（含"正文提及但未链接"的回归例）/ 缺必读文件 / 缺 keel-version / 缺 project-state / 缺预算真源 / **缺闭环钩子本体** / 缺点火锚点 / 死链（含冷区）/ 三段式缺失 / 例外决策缺 created / superseded-by 指向不存在；**2 类告警**：陈旧 / 蒸馏阈值；**6 类合法基线**：MVP 全绿 / `_template` 三级豁免 / `decisions/` 陈旧豁免 / `stale-check: off` 逃生口 / frontmatter 行内注释 / 模板占位字段不算数。全部零 stderr 噪声）。
 
 > 写这版脚本时实测抓到两个 bash 3.2 的坑，已修并在注释里标了出处：
 > ① **变量后紧跟中文标点必须写成 `${st}）`，不能写 `$st）`**——实测在部分环境下 bash 3.2 会把中文标点的首字节并进变量名，`set -u` 下直接报 `unbound variable`（v2 脚本里 5 处都有这个问题）；
 > ② **BSD / macOS 的 `tsort` 遇环仍然返回 0**，只把 `cycle in data` 写到 stderr（GNU `tsort` 才返回 1），所以环检测必须同时看退出码与 stderr。
 > 这正是 §9 存在的理由：**"机器验的东西，必须先自己验过"**——包括验证脚本自己。
 
-**怎么复现这 36 例**：`keel-starter` 随仓库带自测套件，用例与 §9.1 检查表一一对应（每个用例都标注它对应哪一行）：
+**怎么复现这 38 例**：`keel-starter` 随仓库带自测套件，用例与 §9.1 检查表一一对应（每个用例都标注它对应哪一行）：
 
 ```bash
-bash keel/checks/test-lint.sh              # 36 例 + 文档一致性检查
+bash keel/checks/test-lint.sh              # 38 例 + 文档一致性检查
 bash keel/checks/test-lint.sh -v --keep     # 逐例详细输出，并保留临时 fixture 供排查
 ```
 
@@ -641,6 +676,7 @@ MAX_DOC=160;          BYTES_DOC=4800           # 其余单文档
 BYTES_FM=600                                   # frontmatter 字节
 MAX_LINE=360                                   # 任意单行字节
 MAX_DIR_FILES=20                               # 单目录文件数
+BYTES_SESSION=15000                            # §7.2 单轮加载总量（INDEX+NOW+按需命中）
 STALE_DAYS=30; NOW_STALE_DAYS=7; DISTILL_AT=3
 ```
 
@@ -700,7 +736,7 @@ to_epoch() { date -j -f "%Y-%m-%d" "$1" +%s 2>/dev/null || date -d "$1" +%s 2>/d
 
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 # 用临时文件收集结果：兼容 bash 3.2（case 不能直接出现在 $() 内），也避开管道子 shell 吞掉 fail 计数
-deadf="$tmp/dead"; corpus="$tmp/corpus"; longf="$tmp/long"; idxbad="$tmp/idxbad"; edges="$tmp/edges"
+deadf="$tmp/dead"; refd="$tmp/refd"; longf="$tmp/long"; idxbad="$tmp/idxbad"; edges="$tmp/edges"
 
 echo "keel-lint · $(date '+%Y-%m-%d %H:%M') · 目录=$KEEL_DIR · 热区文档=$(hot_files | wc -l | tr -d '[:space:]')"
 echo "── 1. 预算：行数 / 字节 / 单行 / 目录文件数"
@@ -894,12 +930,27 @@ while IFS= read -r f; do
 done < <(all_files) > "$deadf"
 if [ -s "$deadf" ]; then cat "$deadf"; fail=1; fi
 
-echo "── 9. 孤儿（热区文档未被任何热区文档引用；INDEX/_template 豁免）"
-while IFS= read -r g; do cat "$g" >>"$corpus" 2>/dev/null; printf '\n' >>"$corpus"; done < <(hot_files)
+echo "── 9. 孤儿（热区文档未被任何热区文档以链接引用；INDEX/_template 豁免）"
+# v3.1 修正：孤儿判定改用"真实链接图"——把每条链接解析成目标文件的绝对路径再比对。
+# 旧实现是「grep 文件名」的近似：正文里偶然出现同名子串会漏报，文件改名会误报。
+: > "$refd"
+while IFS= read -r f; do
+  fdir=$(cd "$(dirname "$f")" && pwd)
+  {
+    grep -oE '\]\([^)]+\)' "$f" 2>/dev/null | sed -E 's/^\]\(([^) ]+).*/\1/'
+    grep -oE '@[A-Za-z0-9_./-]+\.md' "$f" 2>/dev/null | tr -d '@'
+  } | sort -u | while IFS= read -r link; do
+    case "$link" in http*|mailto:*|"") continue ;; esac
+    t="${link%%#*}"; [ -z "$t" ] && continue
+    tdir=$(cd "$fdir/$(dirname "$t")" 2>/dev/null && pwd) || continue
+    [ -e "$tdir/$(basename "$t")" ] && printf '%s\n' "$tdir/$(basename "$t")"
+  done
+done < <(hot_files) > "$refd"
 while IFS= read -r f; do
   base=$(basename "$f")
   case "$base" in INDEX.md|_template*) continue ;; esac
-  grep -qF "$base" "$corpus" || fail_msg "孤儿（未被任何热区文档引用）: $(rel_of "$f")"
+  fabsp="$(cd "$(dirname "$f")" && pwd)/$base"
+  grep -qxF "$fabsp" "$refd" || fail_msg "孤儿（未被任何热区文档链接引用）: $(rel_of "$f")"
 done < <(hot_files)
 
 echo "── 10. 陈旧（last-verified / NOW updated；豁免类目见 §9.4）"
@@ -978,6 +1029,13 @@ while IFS= read -r d; do
   [ -e "$(dirname "$d")/$sb" ] || fail_msg "superseded-by 指向不存在的文件（${sb}）: $(rel_of "$d")"
 done < <(find "$KEEL_DIR/decisions" -name '*.md' 2>/dev/null)
 
+echo "── 13. 闭环钩子（本体存在且可执行；§10.4 铁律：缺一，闭环不成立）"
+for h in pre-commit commit-msg; do
+  hf="$KEEL_DIR/checks/hooks/$h"
+  if [ ! -f "$hf" ]; then fail_msg "缺闭环钩子本体: checks/hooks/$h"
+  elif [ ! -x "$hf" ]; then fail_msg "闭环钩子不可执行（需 chmod +x）: checks/hooks/$h"; fi
+done
+
 echo "──"
 if [ "$fail" -eq 0 ]; then echo "✅ keel-lint 通过"; else echo "❌ keel-lint 失败（见上方 ❌ 项）"; fi
 exit "$fail"
@@ -994,6 +1052,28 @@ exit "$fail"
 | 任意文件加 `stale-check: off` | 逃生口：确属长期稳定的参考事实 | 须在 `decisions/` 记一条理由，否则属于掩盖腐烂 |
 
 > `last-verified` 的语义是"**有人复核过**"，不是"文件被碰过"。所以它在"增量为王"的层（`pitfalls/`、`skills/`、`NOW`）上是有效信号，在不可变层上只是噪声。
+
+### 9.5 检索增强接入位（可选，不是缺陷项）
+
+Keel 的检索是 `grep` + 三级路由，召回**停在关键词级**：搜得到"连接池"，搜不到"那个老是超时的池子"。这不是疏忽，是取舍——内核要保住零依赖，就不能自带语义索引。
+
+要补这块短板，走**接入位**，而不是往内核里塞：
+
+| 类型 | 代表 | 补的是什么 | 接入方式 |
+|---|---|---|---|
+| 符号级检索 | Serena（LSP，符号/引用/跨文件重命名） | 代码结构，不看文本 | MCP server |
+| 预计算图 | code-graph、trace-mcp（调用图 / 路由图） | "谁调用谁""改这里会炸哪" | MCP server |
+| 库文档 | Context7 | 第三方 API 的当前版本用法 | MCP server |
+
+**唯一规则**：接入了就必须真的能用。声明形式是项目根的 MCP 配置（`.mcp.json` / `.cursor/mcp.json`），由 `checks/check-mcp-config.sh` 校验——**能解析、且每个 server 的 command 在 PATH 上**。
+
+```bash
+bash keel/checks/check-mcp-config.sh        # 恒 exit 0：未接入不算缺陷，落空才算
+```
+
+级别刻意定为 ⚠️ warn：**"没装 Serena"绝不能算项目缺陷**，接不接入是团队决策。它只防一种病——配置文件里写了一行、但那行根本起不来。
+
+> 与 §9.2 的分工：§9.2 管"项目自己要用命令判死什么"；本节管"项目声明要用什么外部能力，并且不落空"。两者的共同底线一致：**能被判死，且误报有逃生口**。
 
 ---
 
@@ -1030,7 +1110,7 @@ exit "$fail"
 | ① 工具侧规则（§4 锚点） | 每次任务开始 | AI 按协议读取与写回；**锚点存在性与原文一致性由 lint 检查**（§9.1-10） |
 | ② pre-commit | `keel/` 下 md 有变更时 | `bash keel/checks/keel-lint.sh keel`，0 fail 才放行 |
 | ③ commit-msg | 每次提交 | 扫描 message 里的 `pitfall: <文件名>`，自动给对应条目 `triggers` +1 并 stage（§7.4） |
-| ④ CI | push / PR | lint 必须 0 fail；**自测必须 36/36**（`bash keel/checks/test-lint.sh`，§9.3）；PR 模板含"写回确认"勾选项 |
+| ④ CI | push / PR | lint 必须 0 fail；**自测必须 38/38**（`bash keel/checks/test-lint.sh`，§9.3）；钩子本体与可执行位由 lint 第 16 项守（§9.1）；PR 模板含"写回确认"勾选项 |
 | 兜底 | —— | `NOW.updated` 超 7 天 → lint ⚠️（提示会话可能未写回） |
 
 **【铁律】①②③④ 缺一，强制闭环就不成立。** 钩子由 `keel-starter` 的 `checks/install-hooks.sh` 落地（§12.1）——**只在文档里写钩子、不安装钩子，等于没有钩子**；v2 的"铁律"与 MVP 五件套自相矛盾（MVP 里既没有钩子也没有 CI），v3 已把四件事一起并入 MVP。
@@ -1072,9 +1152,9 @@ keel/
 ├── NOW.md                   # 当前焦点 + 交接
 ├── pitfalls/                # INDEX.md（表格）+ _template.md + 1 条真实坑
 └── checks/                  # keel-lint.sh + budget.env + rules.md + test-lint.sh/.py
-│                            # + install-hooks.sh + hooks/{pre-commit, commit-msg}
+│                            # + install-hooks.sh + verify-hooks.sh + hooks/{pre-commit, commit-msg}
 ＋ archive/.gitkeep · NOW-history/.gitkeep   # 空目录不被 git 跟踪（§3.3 规则 5）
-＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 36/36（§10.4 之四）
+＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 38/38（§10.4 之四）
 ＋ PR 模板（.github/pull_request_template.md）——"写回确认"勾选项（§10.4 之四）
 ＋ 工具侧锚点 1 句（AGENTS.md 首行）——没有它，上面这些文件不会被读到（§10.4 之一）
 ```
@@ -1085,7 +1165,7 @@ keel/
 2. 装钩子：`bash keel/checks/install-hooks.sh`（pre-commit + commit-msg）；
 3. 贴 CI 片段，并在项目根写入 §4.1 锚点；
 4. 跑 `bash keel/checks/keel-lint.sh keel`——**第一次自检必须 0 fail**（锚点也在检查范围内，§9.1-10）；
-5. 跑 `bash keel/checks/test-lint.sh`——**必须 36/36**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
+5. 跑 `bash keel/checks/test-lint.sh`——**必须 38/38**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
 
 **按需层（不进 MVP，痛点到了再加）**——starter 已带骨架，规格见 §5.7，"怎么填"写在同目录的 `_template*` 里：
 
@@ -1132,6 +1212,19 @@ keel/
 - 发布仓不含设计稿，所以 `test-lint.sh` 的"脚本与文档逐字一致"检查在那里自动 SKIP（§9.3）；
 - 在项目仓里这条检查**能读到 `DESIGN.md`**——于是"文档与脚本不许漂移"这条不变量终于落在有历史可依的地方；
 - 子模块指针与发布仓 HEAD 必须一致（`git submodule status` 行首不出现 `+`），且**推送顺序恒为：先发布仓、后项目仓**，否则别人 clone 后 `submodule update` 会取不到那个提交。
+
+**发布编排（v3.1：这条约束不再靠人记）**：
+
+项目仓根目录的 `scripts/release.sh` 把上面那条顺序**写进代码**——默认 dry-run，`--apply` 才真推：
+
+```bash
+bash scripts/release.sh            # dry-run：前置检查 + 打印将要执行的推送
+bash scripts/release.sh --apply    # ① 发布仓 push → ② 项目仓 push（顺序写死）
+```
+
+它按顺序做四件事：① 两侧工作区是否干净、子模块指针是否一致；② 发布仓跑 lint + 自测（不过就不许推）；
+③ 先推发布仓；④ 再推项目仓，**推送前再查一次指针**（发布仓若刚有新提交，指针会再次失配）。
+第③步失败会直接中止，绝不出现"项目仓推上去了、发布仓没有"的坏状态。
 
 **两站镜像（Gitee 主 + GitHub 镜像）**：
 
