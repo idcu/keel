@@ -22,3 +22,22 @@ jobs:
 
       - name: 发布仓模板自身过一遍 lint
         run: bash keel-starter/keel/checks/keel-lint.sh keel-starter/keel
+
+      # 钩子"验谎"：CI 是新 clone，天然没装 core.hooksPath，所以只验本体存在 + 可执行
+      - name: 闭环钩子本体
+        run: bash keel-starter/keel/checks/verify-hooks.sh keel-starter --allow-unset
+
+      # 可选能力"不落空"：MCP 服务本身能跑；项目根若声明了外部 MCP server，也要可达
+      - name: MCP 只读服务自测
+        run: python3 keel-starter/keel/checks/mcp/keel-mcp-server.py --self-test
+
+      - name: 检索增强接入位（未声明即正常，恒 exit 0）
+        run: bash keel-starter/keel/checks/check-mcp-config.sh .
+
+      # scripts/release.sh 只存在于本仓（发布仓没有它），发布仓 CI 覆盖不到 —— 这里补上
+      - name: 发布脚本自检（语法 / 参数契约 / dry-run）
+        run: |
+          bash -n scripts/release.sh
+          rc=0; bash scripts/release.sh --bogus || rc=$?
+          if [ "$rc" -ne 2 ]; then echo "未知参数应返回退出码 2，实际 $rc"; exit 1; fi
+          bash scripts/release.sh

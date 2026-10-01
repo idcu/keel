@@ -62,8 +62,12 @@ fi
 echo "── 3. 推送（§12.3 硬约束：① 发布仓 → ② 项目仓）"
 BR_STARTER=$(git -C "$SUB" rev-parse --abbrev-ref HEAD)
 BR_PROJ=$(git -C "$PROJ" rev-parse --abbrev-ref HEAD)
-[ "$BR_STARTER" = "HEAD" ] && die "发布仓处于 detached HEAD，无法推送"
-[ "$BR_PROJ" = "HEAD" ] && die "项目仓处于 detached HEAD，无法推送"
+# detached HEAD 只在**真要推送**时才是问题：CI 的新 clone 里子模块本来就是分离头
+# （checkout 出来的），dry-run 必须能在那种环境下跑通，否则它就成了"只能在本地跑的自检"。
+if [ "$APPLY" -eq 1 ]; then
+  [ "$BR_STARTER" = "HEAD" ] && die "发布仓处于 detached HEAD，无法推送"
+  [ "$BR_PROJ" = "HEAD" ] && die "项目仓处于 detached HEAD，无法推送"
+fi
 
 echo "   ① 发布仓（$BR_STARTER）—— 必须先推，否则②的指针没人能取到"
 if [ "$APPLY" -eq 1 ]; then
