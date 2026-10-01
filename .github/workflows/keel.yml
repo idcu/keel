@@ -11,11 +11,30 @@ jobs:
   spec:
     runs-on: ubuntu-latest
     steps:
+      # 故意**不**在 checkout 里取子模块：见下面那一步
       - uses: actions/checkout@v4
-        with:
-          # .gitmodules 用相对 URL（../keel-starter.git），两个托管站各自解析到同站同级仓库，
-          # 所以这里不需要任何 URL 覆盖或 gitee 密钥
-          submodules: recursive
+
+      # 镜像同步是无序的（《Keel 设计稿》§12.3 实测）：Gitee→GitHub 的自动同步不保证两仓先后，
+      # 发布仓平均比项目仓晚 3–4 分钟。于是"项目仓指针指向发布仓新提交"的窗口里，
+      # GitHub 上的发布仓还没有那个提交，直接取子模块会失败：
+      #   remote error: upload-pack: not our ref <sha>
+      # 所以这里带退避重试（10 × 30s ≈ 5 分钟上限，覆盖实测延迟）。
+      # 注意：这个限制管不到人工推送——scripts/release.sh 已经强制了正确顺序。
+      - name: 检出子模块（对镜像延迟重试）
+        run: |
+          want=$(git rev-parse HEAD:keel-starter)
+          echo "项目仓期望的子模块提交: $want"
+          for i in $(seq 1 10); do
+            if git submodule update --init --recursive; then
+              echo "✅ 子模块就绪（第 $i 次尝试）"
+              exit 0
+            fi
+            echo "⚠️  第 $i 次失败 —— 发布仓镜像可能还没同步到 $want，30s 后重试"
+            rm -rf keel-starter .git/modules/keel-starter   # 清掉半成品，避免污染下次重试
+            sleep 30
+          done
+          echo "❌ 子模块连续 10 次取不到（约 5 分钟）——发布仓镜像未同步或该提交不存在"
+          exit 1
 
       - name: 自测 + 规格一致性（在规格仓里 DOC 检查才真正生效）
         run: bash keel-starter/keel/checks/test-lint.sh
