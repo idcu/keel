@@ -14,5 +14,6 @@ keywords: [坑库, 索引, shell, 性能, 批量化, 静默失效, 指标]
 | awk 取出的数字参与比较时按字典序比，峰值/最大值显示偏小 | meta | P2 | [meta/awk-string-vs-number-compare.md](meta/awk-string-vs-number-compare.md) |
 | install.sh 参数解析：遍历 "$@" 时 shift，版本号被当项目根 | meta | **P0** | [meta/arg-parse-shift-while-iterating.md](meta/arg-parse-shift-while-iterating.md) |
 | 手写 JSON 把空值写成 "n/a" 字符串，jq / json.load 解析失败 | meta | P2 | [meta/handwritten-json-nan-placeholder.md](meta/handwritten-json-nan-placeholder.md) |
+| 两仓 lint 与 CI 全绿，但 `git submodule status` 行首有 `+`（发布仓新提交没进克隆） | meta | P1 | [meta/submodule-pointer-drift-not-machine-checked.md](meta/submodule-pointer-drift-not-machine-checked.md) |
 | 归档到 NOW-history/ 后报死链，但两个文件都存在（多了一层目录） | meta | P3 | [meta/cold-zone-link-prefix.md](meta/cold-zone-link-prefix.md) |
 | 文档里举例写链接语法，被 lint 判成死链 | meta | P3 | [meta/link-syntax-example-becomes-real-link.md](meta/link-syntax-example-becomes-real-link.md) |
