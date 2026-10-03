@@ -13,3 +13,6 @@
 # ② 它随时会过期——调研结论应沉淀成 docs/research/*.md 的文字，而不是留一份代码副本。
 # 唯一的取证文档（holaOS 的"假遵守"案例）已提炼进 docs/research/context-governance-verify.md。
 holaOS/
+
+# 遵守率指标数据（§11.2 / ADR 0009）：每台机器的本地观测历史，不进版本库
+keel/checks/.metrics/
