@@ -3,7 +3,7 @@ scope: meta
 status: active
 severity: P1
 last-verified: 2026-10-03
-triggers: 0
+triggers: 1
 keywords: [worktree, 行尾, CRLF, 假fail, 孤儿, 死链, 子模块, 回填]
 ---
 
