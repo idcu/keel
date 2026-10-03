@@ -4,3 +4,12 @@
 # commit-msg 钩子的临时文件：写入被中断时可能残留
 # （hook 正常情况下会 mv 或 rm 掉它，见 keel-starter/keel/checks/hooks/commit-msg）
 *.keeltmp
+
+# 工具与本机数据（不属于项目规格）
+.workbuddy/
+
+# 竞品代码 clone：调研时拉下来读源码用的，**不是本项目资产**。
+# 不进版本库有两个理由：① 16MB 第三方代码，来源与许可不属于本仓；
+# ② 它随时会过期——调研结论应沉淀成 docs/research/*.md 的文字，而不是留一份代码副本。
+# 唯一的取证文档（holaOS 的"假遵守"案例）已提炼进 docs/research/context-governance-verify.md。
+holaOS/

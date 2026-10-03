@@ -42,6 +42,20 @@ jobs:
       - name: 发布仓模板自身过一遍 lint
         run: bash keel-starter/keel/checks/keel-lint.sh keel-starter/keel
 
+      # 本仓的 keel/ 实例（Keel 项目自己的上下文基座，v3.2 起）
+      # 为什么要单独一步：模板 lint 绿 ≠ 本项目上下文合规。
+      # 实例记的是本项目自己的 NOW / 坑 / ADR，模板记的是别人的——两者互不覆盖。
+      # 这一步缺失的后果是"规则要求别人做而自己不做"，而 lint 不会主动报这个。
+      - name: 本仓 keel/ 实例过一遍 lint
+        run: bash keel/checks/keel-lint.sh keel
+
+      # 实例的锚点必须与 §4.1 原文一致（实例自带的 AGENTS.md 不能被删/改写）
+      - name: 点火锚点在位
+        run: |
+          grep -qF '任何任务开始前，先读 keel/INDEX.md 与其中指向的 NOW.md，并遵守 INDEX.md 里的检索协议。' AGENTS.md \
+            || { echo "❌ AGENTS.md 缺 §4.1 原文锚点"; exit 1; }
+          echo "✅ 点火锚点在位"
+
       # 钩子"验谎"：CI 是新 clone，天然没装 core.hooksPath，所以只验本体存在 + 可执行
       - name: 闭环钩子本体
         run: bash keel-starter/keel/checks/verify-hooks.sh keel-starter --allow-unset
