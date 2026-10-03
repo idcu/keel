@@ -17,3 +17,4 @@ keywords: [坑库, 索引, shell, 性能, 批量化, 静默失效, 指标]
 | 两仓 lint 与 CI 全绿，但 `git submodule status` 行首有 `+`（发布仓新提交没进克隆） | meta | P1 | [meta/submodule-pointer-drift-not-machine-checked.md](meta/submodule-pointer-drift-not-machine-checked.md) |
 | 归档到 NOW-history/ 后报死链，但两个文件都存在（多了一层目录） | meta | P3 | [meta/cold-zone-link-prefix.md](meta/cold-zone-link-prefix.md) |
 | 文档里举例写链接语法，被 lint 判成死链 | meta | P3 | [meta/link-syntax-example-becomes-real-link.md](meta/link-syntax-example-becomes-real-link.md) |
+| 临时 worktree 里 lint 报一大片孤儿/超字节（实测 27 条），主工作树同样内容却是 0 fail | meta | P1 | [meta/worktree-eol-differs-from-main.md](meta/worktree-eol-differs-from-main.md) |
