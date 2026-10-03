@@ -3,7 +3,7 @@ scope: meta
 status: active
 severity: P3
 last-verified: 2026-10-03
-triggers: 0
+triggers: 1
 keywords: [死链, 冷区, 归档, NOW-history, 相对路径, 链接]
 ---
 
