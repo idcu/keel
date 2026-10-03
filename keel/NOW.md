@@ -21,8 +21,8 @@ keywords: [焦点, 交接, backfill, 存量合规率, 基线, 断言]
 - [x] **ADR 0011**：回填是"存量合规率"，`backfill=1` **不进遵守率的分母**
 - [x] 设计稿 §11.2 补口径与适用边界；CHANGELOG 3.3.5；两仓版本同步
 - [x] **修一条撒谎的 CI 断言**：`rounds:0` 与实现不符（实现对、断言错）
-- [x] 新坑 `worktree-eol-differs-from-main`（P1）：行尾 CRLF → 27 条假 fail（自己踩的）
-- [x] 发布 v3.3.5 + tag
+- [x] 新坑 `worktree-eol-differs-from-main`（P1）：worktree 里三个成因各造一批假 fail
+- [x] 发布 v3.3.5（backfill）→ **v3.3.6**（修带子模块仓库全报假死链，实测每提交恰好 ❌ 1）
 
 ## 未完成 / 半途
 
