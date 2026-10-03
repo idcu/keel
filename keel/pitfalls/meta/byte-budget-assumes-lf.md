@@ -3,7 +3,7 @@ scope: meta
 status: active
 severity: P0
 last-verified: 2026-10-04
-triggers: 0
+triggers: 1
 keywords: [CRLF, 行尾, 字节预算, autocrlf, 装完即红, Windows, 分发]
 ---
 
