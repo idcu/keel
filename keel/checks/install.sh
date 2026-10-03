@@ -62,9 +62,12 @@ echo "── 2. 装文件"
 if [ "$EXISTING" -eq 1 ]; then
   # 只补缺失与工具链，**不覆盖**用户的 INDEX/NOW/pitfalls/decisions
   # （对应设计稿 §12.3：升级按字段增量合并，不允许一键覆盖）
+  # 工具链逐个补：这些是"实现"，升级应当覆盖（用户改的是文档，不是脚本）
+  # compliance.sh 也在列——漏了它，老用户升级后就没有基线记录能力
   for f in checks/budget.env checks/keel-lint.sh checks/load-estimate.sh \
            checks/keel-lite.sh checks/verify-hooks.sh checks/install-hooks.sh \
-           checks/check-mcp-config.sh checks/mcp/keel-mcp-server.py \
+           checks/compliance.sh checks/check-mcp-config.sh \
+           checks/mcp/keel-mcp-server.py \
            checks/hooks/pre-commit checks/hooks/commit-msg; do
     if [ -e "$tmp/starter/keel/$f" ]; then
       if [ -e "$TARGET/keel/$f" ]; then
@@ -80,6 +83,12 @@ if [ "$EXISTING" -eq 1 ]; then
   done
 else
   cp -R "$tmp/starter/keel" "$TARGET/keel" && echo "   + 已复制 keel/（含 checks / hooks / 模板）"
+fi
+
+# 记一条基线：装模板本身不是"一次工作"，不该进遵守率的分母。
+# 否则新用户第一次看 `compliance.sh report` 会被 50 个模板文件的初始化噪声吓到。
+if [ -f "$TARGET/keel/checks/compliance.sh" ]; then
+  bash "$TARGET/keel/checks/compliance.sh" record --baseline 1 --checked 0 --fails 0 --warns 0 --files 0 --md 0 2>/dev/null || true
 fi
 
 echo "── 3. 钩子可执行位（git 保留 100755，这里再确认一次）"
