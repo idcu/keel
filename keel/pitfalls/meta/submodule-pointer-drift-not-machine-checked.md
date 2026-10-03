@@ -3,7 +3,7 @@ scope: meta
 status: active
 severity: P1
 last-verified: 2026-10-03
-triggers: 0
+triggers: 1
 keywords: [子模块, 指针, 漂移, 硬约束, 两仓, 无人值守]
 ---
 
