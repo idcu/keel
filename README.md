@@ -1,7 +1,7 @@
 # keel · 规格仓
 
 [![keel CI](https://github.com/idcu/keel/actions/workflows/keel.yml/badge.svg)](https://github.com/idcu/keel/actions/workflows/keel.yml)
-[![keel-version](https://img.shields.io/badge/keel--version-3.3.4-4B3FE3)](keel/INDEX.md)
+[![keel-version](https://img.shields.io/badge/keel--version-3.3.8-4B3FE3)](keel/INDEX.md)
 
 > **Keel / 龙骨** —— AI 开发项目的上下文基座 + 轻量合规关卡。
 > 一句话：**让 AI 在任何一次会话里，都能以恒定成本拿到正确的上下文。**
@@ -18,10 +18,11 @@
 
 ```bash
 bash <(curl -fsSL https://gitee.com/idcu/keel-starter/raw/main/install.sh) <你的项目根>
+# 不想手抄点火锚点：末尾加 --with-anchor，我直接写进 AGENTS.md
 ```
 
 装完还差三步（**缺任一步，这套系统等于不存在**）：贴锚点、填自己的内容、小项目先裁剪。
-脚本会把三步打给你。**要固定版本**加 `--ref v3.3.4`。
+脚本会把三步打给你。**要固定版本**加 `--ref v3.3.8`。
 
 ## 目录
 
