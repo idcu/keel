@@ -72,8 +72,14 @@ fi
 echo "   ① 发布仓（$BR_STARTER）—— 必须先推，否则②的指针没人能取到"
 if [ "$APPLY" -eq 1 ]; then
   git -C "$SUB" push -u origin "$BR_STARTER" || die "发布仓推送失败，已中止（项目仓未推送）"
+  # **tag 也要推**（ADR 0010：`keel-version` 声明与 tag 可获取必须同时成立）。
+  # 实测踩过：`git push origin main` **不带 tag**，`install.sh --ref v3.4.0` 因此装不到，
+  # 而"版本号写对了"与"版本能用"是两件事。--follow-tags 随分支带上可达 tag。
+  git -C "$SUB" push --follow-tags origin "$BR_STARTER" \
+    || echo "   ⚠️  tag 推送失败——版本声明与可获取已脱节，--ref 将失效（ADR 0010）"
 else
   echo "   [dry-run] git -C keel-starter push -u origin $BR_STARTER"
+  echo "   [dry-run] git -C keel-starter push --follow-tags origin $BR_STARTER  # tag 必须一起推"
 fi
 
 # 推送前再确认一次指针：发布仓若刚有新提交，指针会再次失配
