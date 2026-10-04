@@ -18,4 +18,6 @@ keywords: [决策, ADR, 索引, 性能, 批量化]
 | 0009 | 遵守率只测客观事实，不采信 AI 自报（全赛道无人实现此指标） | active | [0009-compliance-rate-objective-only.md](0009-compliance-rate-objective-only.md) |
 | 0010 | 版本声明与版本可获取必须同时成立（tag 缺失让 --ref 失效） | active | [0010-version-declared-and-fetchable.md](0010-version-declared-and-fetchable.md) |
 | 0011 | 历史提交可回填，但回填出来的是"存量合规率"，不进遵守率的分母 | active | [0011-backfill-is-not-compliance-rate.md](0011-backfill-is-not-compliance-rate.md) |
+| 0012 | 写回的上下文必须过 lint 门禁才算数（写回是提交，不是写作） | active | [0012-writeback-must-pass-lint-gate.md](0012-writeback-must-pass-lint-gate.md) |
+| 0013 | 性能抖动根因是 fork 成本（已量化），不优化判据只订正基线 | active | [0013-perf-variance-root-cause-is-fork-cost.md](0013-perf-variance-root-cause-is-fork-cost.md) |
 

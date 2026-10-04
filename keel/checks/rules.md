@@ -1,7 +1,7 @@
 ---
 scope: meta
 status: active
-last-verified: 2026-10-01
+last-verified: 2026-10-04
 keywords: [校验, 规则, 扩展检查, CI]
 ---
 
@@ -11,6 +11,10 @@ keywords: [校验, 规则, 扩展检查, CI]
 > 契约漂移、术语混用这类检查依赖具体技术栈，内核**不假装能通用实现**——
 > 在本文件里声明项目自己的命令，由 CI 串联执行，级别（fail / warn）由项目自定。
 > 规格见《Keel 设计稿》§9.2。
+>
+> **内核自带脚本清单**（install-hooks / verify-hooks / load-estimate / compliance 等）
+> 已按 §7.3「沉」移入冷区：[../archive/script-inventory.md](../archive/script-inventory.md)——
+> 那是"查得到就行"的信息，不该占单轮加载预算。
 
 ## 声明格式
 
@@ -21,37 +25,4 @@ keywords: [校验, 规则, 扩展检查, CI]
 |---|---|---|---|---|
 | 1 | <检查什么> | `<可直接粘贴执行的命令>` | ❌ fail / ⚠️ warn | pre-commit / CI |
 
-## 已声明的扩展检查
-
-| # | 检查 | 命令 | 级别 | 触发时机 |
-|---|---|---|---|---|
-| 1 | 契约漂移（示例：换成你项目真实的命令） | `npm run check:contracts` | ❌ fail | pre-commit + CI |
-| 2 | 术语混用（示例：换成你项目真实的命令） | `bash checks/check-terms.sh` | ⚠️ warn | CI |
-
-<!-- 上面两行是占位示例：命令换成你项目里真实存在的，否则 CI 会红。
-     不打算启用的规则整行删掉——留着一条跑不通的命令，比没有更糟。 -->
-
-## Keel 自带脚本（不属于扩展位，不用在这里声明）
-
-| 脚本 | 作用 | 何时跑 |
-|---|---|---|
-| `checks/install-hooks.sh` | 安装 pre-commit + commit-msg（写 `core.hooksPath`） | 每个 clone 一次 |
-| `checks/verify-hooks.sh` | 钩子"验谎"：本体可执行 + 挂载点正确 | 装完复核；CI 加 `--allow-unset` |
-| `checks/load-estimate.sh <关键词>` | 按 §7.2 口径算本轮加载量，超 `BYTES_SESSION` 即非零退出 | 每轮检索时（§8 协议第 4 条的可执行形式） |
-| `checks/keel-lite.sh [keel目录] --apply` | 裁掉按需层成最小集，并剥离 INDEX 里对应路由行 | 小项目第 0 天（§12.1） |
-| `checks/mcp/keel-mcp-server.py` | MCP 只读服务：把 INDEX / CONSTITUTION / NOW 暴露成 resource | 支持 MCP 的客户端（§4.4） |
-| `checks/compliance.sh report` | 遵守率 + 存量合规率（§11.2 / ADR 0009 / ADR 0011）：由 pre-commit 自动记录，report 只读 | 双周回顾（§11） |
-| `checks/compliance.sh backfill [--max N] [--dry]` | 回填历史提交，出"存量合规率"（**不是遵守率**，ADR 0011） | 刚装完的第一天 |
-| `checks/check-mcp-config.sh` | 校验已声明的 MCP server 可达（未声明不算缺陷，恒 exit 0） | 接入语义检索后 · CI（§9.5） |
-
-## 与内核的分工
-
-- **内核负责**（全项目通用、开箱即用）：预算、frontmatter、值域、命名、登记、引用环、死链、孤儿、陈旧、状态机、闭环钩子本体（§9.1-16）。
-- **本文件负责**（项目专属、需要技术栈知识）：契约与实现是否一致、术语是否统一、依赖许可证、生成物是否漂移。
-- CI 串联顺序：**先跑内核 lint（0 fail 才继续）**，再逐条跑本文件里级别为 ❌ 的命令；⚠️ 规则只输出、不阻断。
-
-## 一条规则的准入标准
-
-1. 能被脚本判死（§2 原则 4）——靠人记的不算；
-2. 误报可接受，且误报有**显式豁免方式**（学 §9.4：给豁免留一个字段，而不是靠口头约定）；
-3. 级别定了就别轻易改——**告警降级比告警漏报更容易让人无视全部告警**。
+<!-- 不打算启用的规则整行删掉——留着一条跑不通的命令，比没有更糟。 -->

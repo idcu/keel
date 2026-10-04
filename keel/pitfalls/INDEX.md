@@ -19,3 +19,5 @@ keywords: [坑库, 索引, shell, 性能, 批量化, 静默失效, 指标]
 | 文档里举例写链接语法，被 lint 判成死链 | meta | P3 | [meta/link-syntax-example-becomes-real-link.md](meta/link-syntax-example-becomes-real-link.md) |
 | 全新 clone 到 Windows，装完 lint 当场红：超字节 1211>1200（同文件在 CI 上是 1181） | meta | **P0** | [meta/byte-budget-assumes-lf.md](meta/byte-budget-assumes-lf.md) |
 | 临时 worktree 里 lint 报一大片孤儿/超字节（实测 27 条），主工作树同样内容却是 0 fail | meta | P1 | [meta/worktree-eol-differs-from-main.md](meta/worktree-eol-differs-from-main.md) |
+| test-lint 38 例全 FAIL 且每条都报"（无任何 ❌/⚠️ 输出）"，手动跑 lint 却正常 | meta | **P0** | [meta/harness-invokes-bare-bash.md](meta/harness-invokes-bare-bash.md) |
+| lint 每次运行 stderr 多一行 `[SAFE_DELETE_INVALID_PATH]`，且 %TEMP% 堆积 301 个 tmp 目录 | meta | P3 | [meta/safe-delete-shim-blocks-cleanup.md](meta/safe-delete-shim-blocks-cleanup.md) |
