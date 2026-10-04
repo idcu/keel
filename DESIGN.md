@@ -633,12 +633,14 @@ triggers ≥ 3 → lint 持续 ⚠️ 提醒
 | 14 | **取代关系**：`decisions/*` 的 `superseded-by` 指向不存在的文件 | ❌ fail |
 | 15 | 契约漂移 / 术语混用 | 项目扩展位（§9.2） |
 | 16 | **闭环钩子本体**：`checks/hooks/{pre-commit,commit-msg}` 缺失或不可执行（§10.4 铁律） | ❌ fail |
+| 17 | **版本副本一致**（v3.4.5）：`keel-version`、根 `CHANGELOG.md` 当期小节、README 徽章版本号三者不一致（**副本存在时才查；纯模板安装无 CHANGELOG → 跳过**） | ❌ fail |
 
 > **孤儿检测是核心。** 文件一多，最常见的不是"太大"，是"再也找不到"。
 > **文档腐烂比没文档更危险**，因为 AI 会信它——所以陈旧判定必须锚在 `last-verified` 这个"人来验证过"的字段上。
 > 第 2 / 6 / 7 / 8 / 9 / 10 / 11 项是 v3 新补的：v2 写了规则却没写检查，属于"声称强制、实则空转"。**规则只要不能被脚本判死，就等于建议。**
 > 第 16 项是 v3.1 新补的：钩子本体一旦被误删或被 checkout 掉了可执行位，闭环会**静默失效**——而静默失效正是"铁律"最怕的形态。
 > 第 4 项在 v3.1 被重写：旧的"按文件名 grep"是近似算法（正文字符串里偶然同名会漏报、改名会误报），现在按**解析后的链接目标路径**判定。
+> **第 17 项是本项目自身的 Lint Leakage 修复**（v3.4.5）：ADR 0010 立了"版本声明与可获取必须同时成立"，发布仓 CI 也有 CHANGELOG 检查——**但两者都只存在于发布仓，且已两周无人查看**。实测 `keel-version` 已到 3.4.4 而 CHANGELOG 最新小节停在 3.4.2（发布仓 CI 必然 exit 1）、两仓 README 徽章停在 3.3.8。**判据存在却没人看，等于没有判据**——这正是 arXiv 2606.15828 记录的 Lint Leakage（62%）在本项目内的复现。故把一致性补成第 17 项：**价值不在补上这一版，在拦住下一次**。它只查"副本存在时是否一致"，不负责生成副本。
 
 ### 9.2 扩展检查接口
 
@@ -649,17 +651,17 @@ triggers ≥ 3 → lint 持续 ⚠️ 提醒
 
 ### 9.3 `checks/keel-lint.sh`
 
-实测版（兼容 macOS 自带 bash 3.2；已通过 38 例故障注入——**30 例 fail（覆盖 29 类缺陷）**：超行数 / 超字节 / 单行超限 / 目录文件数 / frontmatter 缺失·超行数·超字节 / 字段缺失 / status 值域 / severity 值域 / keywords 为空 / 日期格式 / 缺 triggers / 命名含日期 / 命名含大写 / **域索引含正文** / 索引漏登记 / 引用环 / 引用环外的**链接图孤儿**（含"正文提及但未链接"的回归例）/ 缺必读文件 / 缺 keel-version / 缺 project-state / 缺预算真源 / **缺闭环钩子本体** / 缺点火锚点 / 死链（含冷区）/ 三段式缺失 / 例外决策缺 created / superseded-by 指向不存在；**2 类告警**：陈旧 / 蒸馏阈值；**6 类合法基线**：MVP 全绿 / `_template` 三级豁免 / `decisions/` 陈旧豁免 / `stale-check: off` 逃生口 / frontmatter 行内注释 / 模板占位字段不算数。**另有一项元检查**：`NOISE` —— 全部 38 例的 stderr 必须为空或命中显式豁免白名单（ADR 0014；此前此处只是一句描述，没人断言它）。
+实测版（兼容 macOS 自带 bash 3.2；已通过 **41 例**故障注入——**33 例 fail（覆盖 31 类缺陷）**：超行数 / 超字节 / 单行超限 / 目录文件数 / frontmatter 缺失·超行数·超字节 / 字段缺失 / status 值域 / severity 值域 / keywords 为空 / 日期格式 / 缺 triggers / 命名含日期 / 命名含大写 / **域索引含正文** / 索引漏登记 / 引用环 / 引用环外的**链接图孤儿**（含"正文提及但未链接"的回归例）/ 缺必读文件 / 缺 keel-version / 缺 project-state / 缺预算真源 / **缺闭环钩子本体** / 缺点火锚点 / 死链（含冷区）/ 三段式缺失 / 例外决策缺 created / superseded-by 指向不存在 / **CHANGELOG 缺当期小节** / **README 徽章版本漂移**；**2 类告警**：陈旧 / 蒸馏阈值；**7 类合法基线**：MVP 全绿 / `_template` 三级豁免 / `decisions/` 陈旧豁免 / `stale-check: off` 逃生口 / frontmatter 行内注释 / 模板占位字段不算数 / **无 CHANGELOG 与 README 的纯模板安装态**。**另有一项元检查**：`NOISE` —— 全部 41 例的 stderr 必须为空或命中显式豁免白名单（ADR 0014；此前此处只是一句描述，没人断言它）。
 
 > 写这版脚本时实测抓到两个 bash 3.2 的坑，已修并在注释里标了出处：
 > ① **变量后紧跟中文标点必须写成 `${st}）`，不能写 `$st）`**——实测在部分环境下 bash 3.2 会把中文标点的首字节并进变量名，`set -u` 下直接报 `unbound variable`（v2 脚本里 5 处都有这个问题）；
 > ② **BSD / macOS 的 `tsort` 遇环仍然返回 0**，只把 `cycle in data` 写到 stderr（GNU `tsort` 才返回 1），所以环检测必须同时看退出码与 stderr。
 > 这正是 §9 存在的理由：**"机器验的东西，必须先自己验过"**——包括验证脚本自己。
 
-**怎么复现这 38 例**：`keel-starter` 随仓库带自测套件，用例与 §9.1 检查表一一对应（每个用例都标注它对应哪一行）：
+**怎么复现这 41 例**：`keel-starter` 随仓库带自测套件，用例与 §9.1 检查表一一对应（每个用例都标注它对应哪一行）：
 
 ```bash
-bash keel/checks/test-lint.sh              # 38 例 + 文档一致性检查
+bash keel/checks/test-lint.sh              # 41 例 + 元检查 + 文档一致性检查
 bash keel/checks/test-lint.sh -v --keep     # 逐例详细输出，并保留临时 fixture 供排查
 ```
 
@@ -794,7 +796,21 @@ base_set() { BASE="${1##*/}"; }
 # 做法：文件清单先落成一份 NUL 分隔的清单，再整体喂给 awk / wc。
 # 语义不变——同样的输入、同样的判据、同一套报错文案；只是把 N 次进程换成 1 次。
 
-tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+# 临时目录：**创建后立刻归一化成 POSIX 路径**再往下用，否则清理在部分环境下静默失败。
+# 起因（坑 safe-delete-shim-blocks-cleanup）：Windows 上 `mktemp -d` 返回
+# `C:\Users\...\Temp/tmp.XXXXXXXX`——**含盘符且混用两种分隔符**，本身就是畸形路径。
+# PATH 前段的安全删除垫片按规则拒绝内嵌盘符 → trap 的 `rm -rf` 被拒（rc=1）→
+# 每次 lint 都在 %TEMP% 留一个目录（历史实测堆积 301 个）。
+# 修法不是"让判据闭嘴"（那是迎合环境），而是消除路径表示的歧义。
+# 用 `pwd -P`（POSIX 平台与 Git Bash 都有，不依赖 MSYS 专有的 -W）：
+# 它给出规范的绝对路径，实测垫片放行、目录确实被删。
+# 注意：`pwd` 失败时**不赋空值**——那样trap 会去删空路径，而 tmp 下游文件也会跟着失效。
+tmp=$(mktemp -d)
+if _tp=$(cd "$tmp" 2>/dev/null && pwd -P 2>/dev/null) && [ -n "$_tp" ]; then
+  tmp="$_tp"
+fi
+unset _tp
+trap 'rm -rf "$tmp"' EXIT
 # 用临时文件收集结果：兼容 bash 3.2（case 不能直接出现在 $() 内），也避开管道子 shell 吞掉 fail 计数
 deadf="$tmp/dead"; refd="$tmp/refd"; longf="$tmp/long"; idxbad="$tmp/idxbad"; edges="$tmp/edges"; pitmiss="$tmp/pitmiss"; pitmisslist="$tmp/pitmisslist"
 
@@ -1365,6 +1381,45 @@ for h in pre-commit commit-msg; do
   elif [ ! -x "$hf" ]; then fail_msg "闭环钩子不可执行（需 chmod +x）: checks/hooks/$h"; fi
 done
 
+# 段 14（v3.4.5）：版本声明的三处副本必须一致。
+#
+# 为什么加这项：ADR 0010 立了"版本声明与可获取必须同时成立"，
+# 发布仓 CI 也有 CHANGELOG 检查——**但两者都只存在于发布仓**。
+# 2026-10-04 实测发现：keel-version 已到 3.4.4，CHANGELOG 最新小节还停在
+# 3.4.2（缺两节 → CI 必然 exit 1），两仓 README 徽章停在 3.3.8。
+# **判据存在却两周无人看**，这正是本项目引用的 Lint Leakage（62%）在自己身上复现。
+#
+# 所以这里补的是**机制性修复**：把"发布后门面会漂"从一次性补正变成判死。
+# 三处副本任一滞后即 fail——**价值不在补上这一版，在拦住下一次**。
+#
+# 适用范围的诚实说明（§9.5 同类边界）：
+#   -纯模板安装的用户项目里没有 CHANGELOG/根 README → 跳过，不误判；
+#   - 只查"副本存在时是否一致"，不负责生成它们（生成是发布脚本的事）。
+VER_IDX="$KEEL_DIR/INDEX.md"
+if [ -f "$VER_IDX" ]; then
+  _v=$(sed -n 's/^keel-version:[[:space:]]*\([^[:space:]]*\).*/\1/p' "$VER_IDX" | head -1)
+  case "${_v:-}" in
+    ""|*[!0-9.]*) ;;# 缺失/非法：段 2 已在管，这里不重复报
+    *)
+      # 副本一：根 CHANGELOG 的当期小节。发布仓与项目仓根都有。
+      _root=$(dirname "$KEEL_DIR")
+      _cl="$_root/CHANGELOG.md"
+      if [ -f "$_cl" ]; then
+        grep -qE "^## ${_v} —" "$_cl" \
+          || fail_msg "CHANGELOG.md 缺 ${_v} 小节（版本已声明 ${_v}，用户装不到/读不到这次变更；ADR 0010）"
+      fi
+      # 副本二：README 徽章里的版本号。只在写了徽章时查。
+      for _rd in "$_root/README.md" "$KEEL_DIR/README.md"; do
+        [ -f "$_rd" ] || continue
+        _badge=$(grep -o 'keel--version-[0-9][0-9.]*' "$_rd" 2>/dev/null | head -1 | sed 's/^keel--version-//')
+        [ -n "${_badge:-}" ] || continue
+        [ "$_badge" = "$_v" ] || fail_msg "README 徽章版本 ${_badge} 与 keel-version ${_v} 不一致（§9.1-14）: ${_rd#"$PWD"/}"
+      done
+      ;;
+  esac
+  unset _v _root _cl _rd _badge
+fi
+
 # 自报耗时并对照 LINT_SECONDS（ADR 0008）：
 # **只告警不 fail**——机器慢不等于文件错。把性能当 fail 会让人在慢机器上
 # 开始绕过 lint，那是比慢更坏的结果（§9.4 同类教训：制造大规模假告警）。
@@ -1457,7 +1512,7 @@ bash keel/checks/check-mcp-config.sh        # 恒 exit 0：未接入不算缺陷
 | ① 工具侧规则（§4 锚点） | 每次任务开始 | AI 按协议读取与写回；**锚点存在性与原文一致性由 lint 检查**（§9.1-10） |
 | ② pre-commit | `keel/` 下 md 有变更时 | `bash keel/checks/keel-lint.sh keel`，0 fail 才放行 |
 | ③ commit-msg | 每次提交 | 扫描 message 里的 `pitfall: <文件名>`，自动给对应条目 `triggers` +1 并 stage（§7.4） |
-| ④ CI | push / PR | lint 必须 0 fail；**自测必须 38/38**（`bash keel/checks/test-lint.sh`，§9.3）；钩子本体与可执行位由 lint 第 16 项守（§9.1）；PR 模板含"写回确认"勾选项 |
+| ④ CI | push / PR | lint 必须 0 fail；**自测必须 39/39**（`bash keel/checks/test-lint.sh`，§9.3）；钩子本体与可执行位由 lint 第 16 项守（§9.1）；PR 模板含"写回确认"勾选项 |
 | 兜底 | —— | `NOW.updated` 超 7 天 → lint ⚠️（提示会话可能未写回） |
 
 **【铁律】①②③④ 缺一，强制闭环就不成立。** 钩子由 `keel-starter` 的 `checks/install-hooks.sh` 落地（§12.1）——**只在文档里写钩子、不安装钩子，等于没有钩子**；v2 的"铁律"与 MVP 五件套自相矛盾（MVP 里既没有钩子也没有 CI），v3 已把四件事一起并入 MVP。
@@ -1605,18 +1660,25 @@ keel/
 └── checks/                  # keel-lint.sh + budget.env + rules.md + test-lint.sh/.py
 │                            # + install-hooks.sh + verify-hooks.sh + hooks/{pre-commit, commit-msg}
 ＋ archive/.gitkeep · NOW-history/.gitkeep   # 空目录不被 git 跟踪（§3.3 规则 5）
-＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 38/38（§10.4 之四）
+＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 39/39（§10.4 之四）
 ＋ PR 模板（.github/pull_request_template.md）——"写回确认"勾选项（§10.4 之四）
 ＋ 工具侧锚点 1 句（AGENTS.md 首行）——没有它，上面这些文件不会被读到（§10.4 之一）
+＋ checks/keel-doctor.sh —— 装完一键自证（v3.4.5）
 ```
 
 **第 0 天五步（缺任一步，MVP 不算落地）**：
 
+0. **（v3.4.5 新增，最先跑）一键自证**：`bash keel/checks/keel-doctor.sh`——
+   它逐项报 5 件事（闭环门禁 / lint 结果 / 单轮加载预算 / 判据自检怎么跑 / 还差你亲手填什么），
+   **只读不改**（诊断与修复分开，避免"顺手改掉你的东西"）。
+   为什么放第0 步：装完的第一分钟是决定会不会继续用的那一分钟，
+   而"读 README 理解价值"要 30 分钟、"跑一条命令看到自己的数字"只要 10 秒。
+   **价值应该可自证，而不是靠说明书说服。**
 1. 展开 `keel-starter`（§12.3），或直接复制 MVP 文件；
 2. 装钩子：`bash keel/checks/install-hooks.sh`（pre-commit + commit-msg）；
 3. 贴 CI 片段，并在项目根写入 §4.1 锚点；
 4. 跑 `bash keel/checks/keel-lint.sh keel`——**第一次自检必须 0 fail**（锚点也在检查范围内，§9.1-10）；
-5. 跑 `bash keel/checks/test-lint.sh`——**必须 38/38**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
+5. 跑 `bash keel/checks/test-lint.sh`——**必须 39/39**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
 
 **按需层（不进 MVP，痛点到了再加）**——starter 已带骨架，规格见 §5.7，"怎么填"写在同目录的 `_template*` 里：
 

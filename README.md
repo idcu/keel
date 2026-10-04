@@ -1,7 +1,7 @@
 # keel · 规格仓
 
 [![keel CI](https://github.com/idcu/keel/actions/workflows/keel.yml/badge.svg)](https://github.com/idcu/keel/actions/workflows/keel.yml)
-[![keel-version](https://img.shields.io/badge/keel--version-3.3.8-4B3FE3)](keel/INDEX.md)
+[![keel-version](https://img.shields.io/badge/keel--version-3.4.5-4B3FE3)](keel/INDEX.md)
 
 > **Keel / 龙骨** —— AI 开发项目的上下文基座 + 轻量合规关卡。
 > 一句话：**让 AI 在任何一次会话里，都能以恒定成本拿到正确的上下文。**
@@ -22,7 +22,16 @@ bash <(curl -fsSL https://gitee.com/idcu/keel-starter/raw/main/install.sh) <你�
 ```
 
 装完还差三步（**缺任一步，这套系统等于不存在**）：贴锚点、填自己的内容、小项目先裁剪。
-脚本会把三步打给你。**要固定版本**加 `--ref v3.3.8`。
+脚本会把三步打给你。**要固定版本**加 `--ref v3.4.5`。
+
+**装完先跑这个**——3 分钟看到这套 Keel 现在什么样（只读不改，不诊断就修）：
+
+```bash
+bash keel/checks/keel-doctor.sh
+```
+
+逐项报 5 件事：闭环门禁（锚点 + 钩子本体 + 挂载点）、lint 结果、单轮加载预算、
+判据自检怎么跑、还有哪些需要你亲手填。
 
 ## 目录
 
@@ -37,10 +46,13 @@ bash <(curl -fsSL https://gitee.com/idcu/keel-starter/raw/main/install.sh) <你�
 
 ## 状态
 
-- `keel-version` **3.3.4** · `project-state` **building**（唯一存储位置：`keel/INDEX.md` frontmatter）
+- `keel-version` **3.4.5** · `project-state` **building**（唯一存储位置：`keel/INDEX.md` frontmatter）
 - 内核校验：`bash keel/checks/keel-lint.sh keel` → 0 fail
-- lint 自测：`bash keel/checks/test-lint.sh` → 38/38
+- lint 自测：`bash keel/checks/test-lint.sh` → 42/42（41 用例 + 1 元检查）
 - 遵守率：`bash keel/checks/compliance.sh report`（无基线时不作数，见 §11.2）
+
+> 本节由lint 第 14 项（§9.1-14）守着：三处版本号任一滞后即 fail。
+> 手工改很快会忘——本项目已经因此漂过两轮。
 
 ## 改之前先看这三条
 

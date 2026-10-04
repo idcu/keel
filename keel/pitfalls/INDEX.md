@@ -20,8 +20,9 @@ keywords: [坑库, 索引, shell, 性能, 批量化]
 | Windows 全新 clone 装完即红 1211>1200 | meta | P0 | [meta/byte-budget-assumes-lf.md](meta/byte-budget-assumes-lf.md) |
 | worktree 报 27 条孤儿，主树 0 fail | meta | P1 | [meta/worktree-eol-differs-from-main.md](meta/worktree-eol-differs-from-main.md) |
 | test-lint 38 例全 FAIL 且无任何输出 | meta | P0 | [meta/harness-invokes-bare-bash.md](meta/harness-invokes-bare-bash.md) |
-| check-mcp-config 报"全部可达"但实际 rc=7 | meta | P3 | [meta/check-mcp-config-only-proves-path.md](meta/check-mcp-config-only-proves-path.md) | [meta/harness-invokes-bare-bash.md](meta/harness-invokes-bare-bash.md) |
-| lint stderr 多一行 SAFE_DELETE_INVALID | meta | P3 | [meta/safe-delete-shim-blocks-cleanup.md](meta/safe-delete-shim-blocks-cleanup.md) |
+| check-mcp-config 报"全部可达"但实际 rc=7 | meta | P3 | [meta/check-mcp-config-only-proves-path.md](meta/check-mcp-config-only-proves-path.md) |
+| lint stderr 多一行 SAFE_DELETE、TEMP 堆积 | meta | P3 | [meta/safe-delete-shim-blocks-cleanup.md](meta/safe-delete-shim-blocks-cleanup.md) |
+| load-estimate 报超限但拆/提/沉都改不动 | meta | P2 | [meta/broad-keyword-false-overrun.md](meta/broad-keyword-false-overrun.md) |
 | 批量化后 39 非坑缺三段、真坑不报 | meta | P1 | [meta/awk-enfile-ignores-skip-state.md](meta/awk-enfile-ignores-skip-state.md) |
 | release.sh 报推送完成但 tag 未上远端 | meta | P1 | [meta/release-pushes-branch-not-tag.md](meta/release-pushes-branch-not-tag.md) |
-| keel-lite --apply 后 6 个孤儿、exit 1 | meta | P1 | [meta/lite-strips-index-before-delete.md](meta/lite-strips-index-before-delete.md) | [meta/release-pushes-branch-not-tag.md](meta/release-pushes-branch-not-tag.md) | [meta/awk-enfile-ignores-skip-state.md](meta/awk-enfile-ignores-skip-state.md) |
+| keel-lite --apply 后 6 个孤儿、exit 1 | meta | P1 | [meta/lite-strips-index-before-delete.md](meta/lite-strips-index-before-delete.md) |

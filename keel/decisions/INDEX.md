@@ -14,11 +14,11 @@ keywords: [决策, ADR, 索引, 性能, 批量化]
 | 0005 | 闭环钩子"验谎"：lint 第 16 项 + verify-hooks.sh | active | [0005-verify-hooks.md](0005-verify-hooks.md) |
 | 0006 | 单轮加载量进预算真源（BYTES_SESSION）+ load-estimate.sh | active | [0006-session-load-budget.md](0006-session-load-budget.md) |
 | 0007 | 兑现 MCP 只读落点，并把语义检索做成接入位 | active | [0007-mcp-readonly-and-retrieval-slot.md](0007-mcp-readonly-and-retrieval-slot.md) |
-| 0008 | 把 lint 的 per-file fork 批量化（319s→97s），并给 lint 自身设时限预算 | active | [0008-batch-fork-and-time-budget.md](0008-batch-fork-and-time-budget.md) |
-| 0009 | 遵守率只测客观事实，不采信 AI 自报（全赛道无人实现此指标） | active | [0009-compliance-rate-objective-only.md](0009-compliance-rate-objective-only.md) |
+| 0008 | 把 lint 的 per-file fork批量化（319s→97s），并给 lint 自身设时限预算 | active | [0008-batch-fork-and-time-budget.md](0008-batch-fork-and-time-budget.md) |
+| 0009 | 遵守率：口径与数据源（合并原 0011 回填不进分母、0012 写回过门禁）；取证沉 [archive/0009-evidence.md](archive/0009-evidence.md) | active | [0009-compliance-rate-objective-only.md](0009-compliance-rate-objective-only.md) |
 | 0010 | 版本声明与版本可获取必须同时成立（tag 缺失让 --ref 失效） | active | [0010-version-declared-and-fetchable.md](0010-version-declared-and-fetchable.md) |
-| 0011 | 历史提交可回填，但回填出来的是"存量合规率"，不进遵守率的分母 | active | [0011-backfill-is-not-compliance-rate.md](0011-backfill-is-not-compliance-rate.md) |
-| 0012 | 写回的上下文必须过 lint 门禁才算数（写回是提交，不是写作） | active | [0012-writeback-must-pass-lint-gate.md](0012-writeback-must-pass-lint-gate.md) |
 | 0013 | 性能抖动根因是 fork 成本（已量化），不优化判据只订正基线 | active | [0013-perf-variance-root-cause-is-fork-cost.md](0013-perf-variance-root-cause-is-fork-cost.md) |
-| 0014 | 把"零 stderr 噪声"变成判据（**提案，待双签**） | active | [0014-zero-stderr-as-criterion-proposal.md](0014-zero-stderr-as-criterion-proposal.md) |
+| 0014 | 把"零 stderr 噪声"变成判据（**已批准并实施**；owner 授权落地） | active | [0014-zero-stderr-as-criterion-proposal.md](0014-zero-stderr-as-criterion-proposal.md) |
+| ~~0011~~ | 已并入 0009（回填不进分母）——原文沉 [archive/](archive/) | archived | [archive/](archive/) |
+| ~~0012~~ | 已并入 0009（写回必须过门禁）——原文沉 [archive/](archive/) | archived | [archive/](archive/) |
 

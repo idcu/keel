@@ -34,7 +34,7 @@ lint 每次运行 stderr 都多一行：
 ```
 
 已查明**不是 Keel 所发**（`grep -rn "SAFE_DELETE" keel/checks/` 为空），
-而是本机 PATH 上的安全删除垫片拒绝带盘符路径，导致 `keel-lint.sh:63` 的
+而是本机 PATH 上的安全删除垫片拒绝含盘符的路径，导致 keel-lint.sh 里的
 `trap 'rm -rf "$tmp"'` 被拦（坑 `safe-delete-shim-blocks-cleanup`）。
 
 **但这恰恰证明了缺口**：套件 38 例全 PASS，而 stderr 一直是脏的——
