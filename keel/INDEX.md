@@ -3,7 +3,7 @@ scope: meta
 status: active
 last-verified: 2026-10-03
 keywords: [索引, 入口, 路由, 规格, 两仓]
-keel-version: 3.3.9
+keel-version: 3.4.0
 project-state: building     # exploring | architecture-locked | building | frozen
 ---
 
