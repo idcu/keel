@@ -1397,6 +1397,13 @@ Keel 的检索是 `grep` + 三级路由，召回**停在关键词级**：搜得�
 
 **唯一规则**：接入了就必须真的能用。声明形式是项目根的 MCP 配置（`.mcp.json` / `.cursor/mcp.json`），由 `checks/check-mcp-config.sh` 校验——**能解析、且每个 server 的 command 在 PATH 上**。
 
+> **这条判据的能力边界**（实测确认，别把它当更强的东西用）：
+> 它证明的是「**声明不落空**」——可执行文件存在。仅此而已。
+> **它证不了「server 能启动」**：实测 `{"command":"bash","args":["-c","exit 7"]}`
+> 会被判 ✅，而真跑起来 rc=7（参数错、依赖缺、协议不兼容全在判据之外）。
+> 真要确认能启动，得自己发一次 `initialize` —— 那是**接入方的一次性验收**，不是 lint 的职责。
+> 坑：[keel/pitfalls/meta/check-mcp-config-only-proves-path.md](keel/pitfalls/meta/check-mcp-config-only-proves-path.md)。
+
 ```bash
 bash keel/checks/check-mcp-config.sh        # 恒 exit 0：未接入不算缺陷，落空才算
 ```
