@@ -20,4 +20,5 @@ keywords: [决策, ADR, 索引, 性能, 批量化]
 | 0011 | 历史提交可回填，但回填出来的是"存量合规率"，不进遵守率的分母 | active | [0011-backfill-is-not-compliance-rate.md](0011-backfill-is-not-compliance-rate.md) |
 | 0012 | 写回的上下文必须过 lint 门禁才算数（写回是提交，不是写作） | active | [0012-writeback-must-pass-lint-gate.md](0012-writeback-must-pass-lint-gate.md) |
 | 0013 | 性能抖动根因是 fork 成本（已量化），不优化判据只订正基线 | active | [0013-perf-variance-root-cause-is-fork-cost.md](0013-perf-variance-root-cause-is-fork-cost.md) |
+| 0014 | 把"零 stderr 噪声"变成判据（**提案，待双签**） | active | [0014-zero-stderr-as-criterion-proposal.md](0014-zero-stderr-as-criterion-proposal.md) |
 
