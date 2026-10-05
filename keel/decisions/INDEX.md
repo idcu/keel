@@ -19,6 +19,7 @@ keywords: [决策, ADR, 索引, 性能, 批量化]
 | 0010 | 版本声明与版本可获取必须同时成立（tag 缺失让 --ref 失效） | active | [0010-version-declared-and-fetchable.md](0010-version-declared-and-fetchable.md) |
 | 0013 | 性能抖动根因是 fork 成本（已量化），不优化判据只订正基线 | active | [0013-perf-variance-root-cause-is-fork-cost.md](0013-perf-variance-root-cause-is-fork-cost.md) |
 | 0014 | 把"零 stderr 噪声"变成判据（**已批准并实施**；owner 授权落地） | active | [0014-zero-stderr-as-criterion-proposal.md](0014-zero-stderr-as-criterion-proposal.md) |
+| 0015 | 性能：先查清再动手——采纳自测子集（`--only`），放弃抽离慢段（判据失效贵于 32秒） | active | [0015-perf-measure-before-optimize.md](0015-perf-measure-before-optimize.md) |
 | ~~0011~~ | 已并入 0009（回填不进分母）——原文沉 [archive/](archive/) | archived | [archive/](archive/) |
 | ~~0012~~ | 已并入 0009（写回必须过门禁）——原文沉 [archive/](archive/) | archived | [archive/](archive/) |
 
