@@ -3,14 +3,14 @@ scope: now
 status: active
 last-verified: 2026-10-05
 updated: 2026-10-05
-keywords: [焦点, 采用日, macOS, 链式挂载, v3.4.7]
+keywords: [焦点, 采用日, macOS, 流式扫描, v3.4.7]
 ---
 
 # NOW · main
 
 ## 当前焦点
 
-**第十八轮：采用日（首个外部采用方 lytjs）+ 发 v3.4.7。** 上轮见 `NOW-history/`。
+**第十八轮：采用日（首个采用方 lytjs）+ 发布收口 + 段 3/10/11 流式扫描（macOS 2.1×）。** 上轮见 `NOW-history/`。
 
 ## 本轮完成
 
@@ -23,13 +23,15 @@ keywords: [焦点, 采用日, macOS, 链式挂载, v3.4.7]
 - [x] **模板身份泄漏修复**：starter 的 CONSTITUTION/NOW 改为占位骨架
 - [x] **发布面收口 + 发 v3.4.7**：根/内部 `install.sh` 漂移、`test-lint.py` 未随 ADR 0016
       同步——已修；v3.4.6 tag 之后的修复此前取不到（`--ref`），随本版收口
+- [x] **段 3/10/11 流式扫描落地**：macOS 交替 A/B 68s → 32s（**2.1×**）；全量自测
+      43/43 · DOC 逐字一致 · 三仓 lint 绿
 - [x] 全量自测 43/43 · 两仓 lint 0 fail
 
 ## 未完成
 
 - [ ] 遵守率无基线 —— lytjs 已接入，等提交累积
-- [ ] 段 2/3 优化：v3.4.8 两方案实测后回退（合成字段 2× 慢 / `#pattern` 3.7× 慢，
-      均已记 perf-findings）；下一步＝按文件顺序单趟流式扫描，**双平台各测**再落地
+- [ ] **Windows 侧性能验证**（本机无 Windows 通道）：命令已备于 `perf-findings.txt`，
+      预期"新 < 旧"，数字贴回该文件
 - [ ] 模板里的 decisions/pitfalls 示例库是否随采用方清理，待观察
 
 ## 下一步
