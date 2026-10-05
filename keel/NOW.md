@@ -3,14 +3,14 @@ scope: now
 status: active
 last-verified: 2026-10-05
 updated: 2026-10-05
-keywords: [焦点, 采用日, macOS, 链式挂载]
+keywords: [焦点, 采用日, macOS, 链式挂载, v3.4.7]
 ---
 
 # NOW · main
 
 ## 当前焦点
 
-**第十八轮：采用日（首个外部采用方 lytjs）。** 上轮（自测子集 / 性能查清）见 `NOW-history/`。
+**第十八轮：采用日（首个外部采用方 lytjs）+ 发 v3.4.7。** 上轮见 `NOW-history/`。
 
 ## 本轮完成
 
@@ -18,14 +18,12 @@ keywords: [焦点, 采用日, macOS, 链式挂载]
       ENDFILE → 末件字段丢、自测 13/42 假失败（坑 `awk-gawk-gaps`）；三副本 + DESIGN 同步
 - [x] **doctor 传参修复**：曾把 keel 目录当项目根 → 挂载检查整体跳过（假"闭环成立"）；
       第 5 项占位正则同步收窄（不再误报 HTML 注释）
-- [x] **ADR 0016**：版本副本检查只在写了 keel 徽章的发行仓生效（用户项目自带
-      CHANGELOG 不再误判）；新增用例 42 作护栏，用例 40 补徽章前置
-- [x] **ADR 0017 链式挂载**：verify-hooks 认可框架钩子调用 keel 本体（husky 委托形态
-      走父目录探测）；install-hooks 提示同步；lytjs 实测通过
-- [x] **模板身份泄漏修复**：starter 的 CONSTITUTION/NOW 由 Keel 自身实例改为占位骨架
-      ——doctor 三项占位检测此前测不出，现在真能检出
-- [x] **跟进发布仓同步**：根/内部 `install.sh` 漂移 + `test-lint.py` 未随 ADR 0016
-      同步（两处 CI 判据本应拦下）——已修；全量自测 43/43 · 两仓 lint 0 fail
+- [x] **ADR 0016**：版本副本检查只在写了 keel 徽章的发行仓生效；新增用例 42 作护栏
+- [x] **ADR 0017 链式挂载**：verify-hooks 认可框架钩子调用 keel 本体；lytjs（husky）实测通过
+- [x] **模板身份泄漏修复**：starter 的 CONSTITUTION/NOW 改为占位骨架
+- [x] **发布面收口 + 发 v3.4.7**：根/内部 `install.sh` 漂移、`test-lint.py` 未随 ADR 0016
+      同步——已修；v3.4.6 tag 之后的修复此前取不到（`--ref`），随本版收口
+- [x] 全量自测 43/43 · 两仓 lint 0 fail
 
 ## 未完成
 
@@ -35,9 +33,9 @@ keywords: [焦点, 采用日, macOS, 链式挂载]
 
 ## 下一步
 
-1. `scripts/release.sh --apply` 发 v3.4.6（**先发布仓**）——本轮 5 项修复随版
-2. 观察 lytjs 第二周：遵守率 / 检索预算 / 蒸馏触发是否真跑起来
-3. 坑库再登记撞线时按子目录分层（属规格变更，走人审）
+1. 观察 lytjs 第二周：遵守率 / 检索预算 / 蒸馏触发是否真跑起来
+2. 坑库再登记撞线时按子目录分层（属规格变更，走人审）
+3. "同版本 patch vs tag" 政策：本次以发版收口；后续是否默认"patch 后必发版"待观察
 
 ## 阻塞
 

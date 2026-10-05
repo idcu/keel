@@ -1,7 +1,7 @@
 # keel · 规格仓
 
 [![keel CI](https://github.com/idcu/keel/actions/workflows/keel.yml/badge.svg)](https://github.com/idcu/keel/actions/workflows/keel.yml)
-[![keel-version](https://img.shields.io/badge/keel--version-3.4.6-4B3FE3)](keel/INDEX.md)
+[![keel-version](https://img.shields.io/badge/keel--version-3.4.7-4B3FE3)](keel/INDEX.md)
 
 > **Keel / 龙骨** —— AI 开发项目的上下文基座 + 轻量合规关卡。
 > 一句话：**让 AI 在任何一次会话里，都能以恒定成本拿到正确的上下文。**

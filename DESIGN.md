@@ -633,7 +633,7 @@ triggers ≥ 3 → lint 持续 ⚠️ 提醒
 | 14 | **取代关系**：`decisions/*` 的 `superseded-by` 指向不存在的文件 | ❌ fail |
 | 15 | 契约漂移 / 术语混用 | 项目扩展位（§9.2） |
 | 16 | **闭环钩子本体**：`checks/hooks/{pre-commit,commit-msg}` 缺失或不可执行（§10.4 铁律） | ❌ fail |
-| 17 | **版本副本一致**（v3.4.5；v3.4.6 收窄触发，ADR 0016）：`keel-version`、根 `CHANGELOG.md` 当期小节、README 徽章版本号三者不一致（**仅"写了 keel 徽章"的发行仓检查——用户项目自带 CHANGELOG 不再误判**） | ❌ fail |
+| 17 | **版本副本一致**（v3.4.5；v3.4.7 收窄触发，ADR 0016）：`keel-version`、根 `CHANGELOG.md` 当期小节、README 徽章版本号三者不一致（**仅"写了 keel 徽章"的发行仓检查——用户项目自带 CHANGELOG 不再误判**） | ❌ fail |
 
 > **孤儿检测是核心。** 文件一多，最常见的不是"太大"，是"再也找不到"。
 > **文档腐烂比没文档更危险**，因为 AI 会信它——所以陈旧判定必须锚在 `last-verified` 这个"人来验证过"的字段上。
@@ -1392,7 +1392,7 @@ done
 # 所以这里补的是**机制性修复**：把"发布后门面会漂"从一次性补正变成判死。
 # 三处副本任一滞后即 fail——**价值不在补上这一版，在拦住下一次**。
 #
-# 适用范围的诚实说明（§9.5 同类边界，v3.4.6 收窄触发）：
+# 适用范围的诚实说明（§9.5 同类边界，v3.4.7 收窄触发）：
 #   - 触发条件是「根或 keel/ 的 README 写了 keel 徽章」——徽章 = 自认 keel 发行仓；
 #     真实用户项目（自带自己的 CHANGELOG、无徽章）→ 跳过，不误判
 #     （实测：首个采用方 lytjs 安装当日被旧触发条件误判"缺当期小节"，ADR 0016）。
@@ -1525,7 +1525,7 @@ bash keel/checks/check-mcp-config.sh        # 恒 exit 0：未接入不算缺陷
 **【铁律】①②③④ 缺一，强制闭环就不成立。** 钩子由 `keel-starter` 的 `checks/install-hooks.sh` 落地（§12.1）——**只在文档里写钩子、不安装钩子，等于没有钩子**；v2 的"铁律"与 MVP 五件套自相矛盾（MVP 里既没有钩子也没有 CI），v3 已把四件事一起并入 MVP。
 
 > 落地方式：钩子本体版本化在 `keel/checks/hooks/`，`install-hooks.sh` 只把 `core.hooksPath` 指过去——**不往 `.git/hooks/` 写不可见文件**，所以钩子可评审、团队共享、跟着分支走，也比 `.pre-commit-config.yaml` 少一层外部依赖。
-> **与既有钩子框架共存（v3.4.6，ADR 0017）**：`core.hooksPath` 已被 husky 等框架占用时，
+> **与既有钩子框架共存（v3.4.7，ADR 0017）**：`core.hooksPath` 已被 husky 等框架占用时，
 > 不要去抢它——把 keel 两个钩子本体**并入该框架的钩子文件**（`bash keel/checks/hooks/<钩子名>`）即可；
 > `verify-hooks.sh` 支持这种**链式挂载**：在"git 实际执行的钩子文件、或其父目录同名文件"里
 > 检出 keel 钩子本体路径即判就绪。首个采用方 lytjs（husky）验证了该路径。
