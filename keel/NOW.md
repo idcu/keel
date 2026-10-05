@@ -24,7 +24,8 @@ keywords: [焦点, 采用日, macOS, 链式挂载]
       走父目录探测）；install-hooks 提示同步；lytjs 实测通过
 - [x] **模板身份泄漏修复**：starter 的 CONSTITUTION/NOW 由 Keel 自身实例改为占位骨架
       ——doctor 三项占位检测此前测不出，现在真能检出
-- [x] 全量自测 42/42 · DOC 逐字一致 · 两仓 lint 0 fail
+- [x] **跟进发布仓同步**：根/内部 `install.sh` 漂移 + `test-lint.py` 未随 ADR 0016
+      同步（两处 CI 判据本应拦下）——已修；全量自测 43/43 · 两仓 lint 0 fail
 
 ## 未完成
 
