@@ -30,8 +30,8 @@ keywords: [焦点, 采用日, macOS, 流式扫描, v3.4.7]
 ## 未完成
 
 - [ ] 遵守率无基线 —— lytjs 已接入，等提交累积
-- [ ] **Windows 侧性能验证**（本机无 Windows 通道）：命令已备于 `perf-findings.txt`，
-      预期"新 < 旧"，数字贴回该文件
+- [x] **Windows 侧性能验证（QEMU VM，2026-10-06）**：旧 986/555s → 新 409/333s
+      （**≈2.08×**，与 macOS 2.1× 一致）；注记见 `perf-findings.txt`（TCG/rc/未跑完项）
 - [ ] 模板里的 decisions/pitfalls 示例库是否随采用方清理，待观察
 
 ## 下一步
