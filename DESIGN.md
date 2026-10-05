@@ -633,7 +633,7 @@ triggers ≥ 3 → lint 持续 ⚠️ 提醒
 | 14 | **取代关系**：`decisions/*` 的 `superseded-by` 指向不存在的文件 | ❌ fail |
 | 15 | 契约漂移 / 术语混用 | 项目扩展位（§9.2） |
 | 16 | **闭环钩子本体**：`checks/hooks/{pre-commit,commit-msg}` 缺失或不可执行（§10.4 铁律） | ❌ fail |
-| 17 | **版本副本一致**（v3.4.5）：`keel-version`、根 `CHANGELOG.md` 当期小节、README 徽章版本号三者不一致（**副本存在时才查；纯模板安装无 CHANGELOG → 跳过**） | ❌ fail |
+| 17 | **版本副本一致**（v3.4.5；v3.4.6 收窄触发，ADR 0016）：`keel-version`、根 `CHANGELOG.md` 当期小节、README 徽章版本号三者不一致（**仅"写了 keel 徽章"的发行仓检查——用户项目自带 CHANGELOG 不再误判**） | ❌ fail |
 
 > **孤儿检测是核心。** 文件一多，最常见的不是"太大"，是"再也找不到"。
 > **文档腐烂比没文档更危险**，因为 AI 会信它——所以陈旧判定必须锚在 `last-verified` 这个"人来验证过"的字段上。
@@ -651,7 +651,7 @@ triggers ≥ 3 → lint 持续 ⚠️ 提醒
 
 ### 9.3 `checks/keel-lint.sh`
 
-实测版（兼容 macOS 自带 bash 3.2；已通过 **41 例**故障注入——**33 例 fail（覆盖 31 类缺陷）**：超行数 / 超字节 / 单行超限 / 目录文件数 / frontmatter 缺失·超行数·超字节 / 字段缺失 / status 值域 / severity 值域 / keywords 为空 / 日期格式 / 缺 triggers / 命名含日期 / 命名含大写 / **域索引含正文** / 索引漏登记 / 引用环 / 引用环外的**链接图孤儿**（含"正文提及但未链接"的回归例）/ 缺必读文件 / 缺 keel-version / 缺 project-state / 缺预算真源 / **缺闭环钩子本体** / 缺点火锚点 / 死链（含冷区）/ 三段式缺失 / 例外决策缺 created / superseded-by 指向不存在 / **CHANGELOG 缺当期小节** / **README 徽章版本漂移**；**2 类告警**：陈旧 / 蒸馏阈值；**7 类合法基线**：MVP 全绿 / `_template` 三级豁免 / `decisions/` 陈旧豁免 / `stale-check: off` 逃生口 / frontmatter 行内注释 / 模板占位字段不算数 / **无 CHANGELOG 与 README 的纯模板安装态**。**另有一项元检查**：`NOISE` —— 全部 41 例的 stderr 必须为空或命中显式豁免白名单（ADR 0014；此前此处只是一句描述，没人断言它）。
+实测版（兼容 macOS 自带 bash 3.2；已通过 **42 例**故障注入——**33 例 fail（覆盖 31 类缺陷）**：超行数 / 超字节 / 单行超限 / 目录文件数 / frontmatter 缺失·超行数·超字节 / 字段缺失 / status 值域 / severity 值域 / keywords 为空 / 日期格式 / 缺 triggers / 命名含日期 / 命名含大写 / **域索引含正文** / 索引漏登记 / 引用环 / 引用环外的**链接图孤儿**（含"正文提及但未链接"的回归例）/ 缺必读文件 / 缺 keel-version / 缺 project-state / 缺预算真源 / **缺闭环钩子本体** / 缺点火锚点 / 死链（含冷区）/ 三段式缺失 / 例外决策缺 created / superseded-by 指向不存在 / **CHANGELOG 缺当期小节** / **README 徽章版本漂移**；**2 类告警**：陈旧 / 蒸馏阈值；**8 类合法基线**：MVP 全绿 / `_template` 三级豁免 / `decisions/` 陈旧豁免 / `stale-check: off` 逃生口 / frontmatter 行内注释 / 模板占位字段不算数 / **无 CHANGELOG 与 README 的纯模板安装态 / 无徽章的自带 CHANGELOG（ADR 0016）**。**另有一项元检查**：`NOISE` —— 全部 42 例的 stderr 必须为空或命中显式豁免白名单（ADR 0014；此前此处只是一句描述，没人断言它）。
 
 > 写这版脚本时实测抓到两个 bash 3.2 的坑，已修并在注释里标了出处：
 > ① **变量后紧跟中文标点必须写成 `${st}）`，不能写 `$st）`**——实测在部分环境下 bash 3.2 会把中文标点的首字节并进变量名，`set -u` 下直接报 `unbound variable`（v2 脚本里 5 处都有这个问题）；
@@ -851,8 +851,8 @@ FMQ="$tmp/fmq"      # 查询表：<路径>\t<key>\t<value>
 FMHAS="$tmp/fmhas"  # 每个文件的 fm 原始行（供"字段是否存在"判断）
 if [ "$HOTN" -gt 0 ]; then
   # 一次 awk 扫全部文件，把每个文件的 fm 字段算完落成查询表。
-  # 用 gawk/mawk 的 ENDFILE 在 POSIX awk 上不可用，故先试 ENDFILE 版本，
-  # 产物为空则回落到"逐文件一次 awk"（仍是 24 次而非 500 次 fork）。
+  # 收尾 flush 用 END，**不用 gawk 专有 ENDFILE**——BWK awk（macOS）把它当未定义
+  # 变量、末文件字段静默丢失（坑 awk-gawk-gaps）；产物为空仍回落逐文件版。
   : > "$FMQ"
   XLIST="$HOTLIST"; xrun awk -v OFS='\t' '
     function trim(v) { sub(/^[[:space:]]+/, "", v); sub(/[[:space:]]+$/, "", v); return v }
@@ -868,7 +868,7 @@ if [ "$HOTN" -gt 0 ]; then
         if (k ~ /^[A-Za-z0-9_-]+$/ && !(k in val)) { seen[k] = 1; val[k] = yval(trim(substr($0, ci + 1))) } }
       next
     }
-    ENDFILE { for (kk in seen) print pf, kk, val[kk]; delete seen; delete val }
+    END     { for (kk in seen) print pf, kk, val[kk] }
   ' > "$FMQ" 2>/dev/null
   if [ ! -s "$FMQ" ]; then
     : > "$FMQ"
@@ -1228,7 +1228,7 @@ awk -F'\t' '
     for (i = 1; i <= np; i++) {
       seg = parts[i]
       if (seg == "" || seg == ".") continue
-      if (seg == "..") { sub(/\/[^/]*$/, "", out); continue }
+      if (seg == "..") { sub(/\/[^\/]*$/, "", out); continue }
       out = (out == "" ? seg : out "/" seg)
     }
     return out
@@ -1392,8 +1392,10 @@ done
 # 所以这里补的是**机制性修复**：把"发布后门面会漂"从一次性补正变成判死。
 # 三处副本任一滞后即 fail——**价值不在补上这一版，在拦住下一次**。
 #
-# 适用范围的诚实说明（§9.5 同类边界）：
-#   -纯模板安装的用户项目里没有 CHANGELOG/根 README → 跳过，不误判；
+# 适用范围的诚实说明（§9.5 同类边界，v3.4.6 收窄触发）：
+#   - 触发条件是「根或 keel/ 的 README 写了 keel 徽章」——徽章 = 自认 keel 发行仓；
+#     真实用户项目（自带自己的 CHANGELOG、无徽章）→ 跳过，不误判
+#     （实测：首个采用方 lytjs 安装当日被旧触发条件误判"缺当期小节"，ADR 0016）。
 #   - 只查"副本存在时是否一致"，不负责生成它们（生成是发布脚本的事）。
 VER_IDX="$KEEL_DIR/INDEX.md"
 if [ -f "$VER_IDX" ]; then
@@ -1401,23 +1403,28 @@ if [ -f "$VER_IDX" ]; then
   case "${_v:-}" in
     ""|*[!0-9.]*) ;;# 缺失/非法：段 2 已在管，这里不重复报
     *)
-      # 副本一：根 CHANGELOG 的当期小节。发布仓与项目仓根都有。
       _root=$(dirname "$KEEL_DIR")
-      _cl="$_root/CHANGELOG.md"
-      if [ -f "$_cl" ]; then
-        grep -qE "^## ${_v} —" "$_cl" \
-          || fail_msg "CHANGELOG.md 缺 ${_v} 小节（版本已声明 ${_v}，用户装不到/读不到这次变更；ADR 0010）"
-      fi
-      # 副本二：README 徽章里的版本号。只在写了徽章时查。
+      # 副本二（先查）：README 徽章里的版本号。只在写了徽章时查——
+      # 徽章同时是副本一（CHANGELOG）的触发条件：没徽章 = 不是 keel 发行仓。
+      _badge_seen=""
       for _rd in "$_root/README.md" "$KEEL_DIR/README.md"; do
         [ -f "$_rd" ] || continue
         _badge=$(grep -o 'keel--version-[0-9][0-9.]*' "$_rd" 2>/dev/null | head -1 | sed 's/^keel--version-//')
         [ -n "${_badge:-}" ] || continue
+        _badge_seen=1
         [ "$_badge" = "$_v" ] || fail_msg "README 徽章版本 ${_badge} 与 keel-version ${_v} 不一致（§9.1-14）: ${_rd#"$PWD"/}"
       done
+      # 副本一：根 CHANGELOG 的当期小节。仅发行仓（写了徽章）检查。
+      if [ -n "$_badge_seen" ]; then
+        _cl="$_root/CHANGELOG.md"
+        if [ -f "$_cl" ]; then
+          grep -qE "^## ${_v} —" "$_cl" \
+            || fail_msg "CHANGELOG.md 缺 ${_v} 小节（版本已声明 ${_v}，用户装不到/读不到这次变更；ADR 0010）"
+        fi
+      fi
       ;;
   esac
-  unset _v _root _cl _rd _badge
+  unset _v _root _cl _rd _badge _badge_seen
 fi
 
 # 自报耗时并对照 LINT_SECONDS（ADR 0008）：
@@ -1518,6 +1525,10 @@ bash keel/checks/check-mcp-config.sh        # 恒 exit 0：未接入不算缺陷
 **【铁律】①②③④ 缺一，强制闭环就不成立。** 钩子由 `keel-starter` 的 `checks/install-hooks.sh` 落地（§12.1）——**只在文档里写钩子、不安装钩子，等于没有钩子**；v2 的"铁律"与 MVP 五件套自相矛盾（MVP 里既没有钩子也没有 CI），v3 已把四件事一起并入 MVP。
 
 > 落地方式：钩子本体版本化在 `keel/checks/hooks/`，`install-hooks.sh` 只把 `core.hooksPath` 指过去——**不往 `.git/hooks/` 写不可见文件**，所以钩子可评审、团队共享、跟着分支走，也比 `.pre-commit-config.yaml` 少一层外部依赖。
+> **与既有钩子框架共存（v3.4.6，ADR 0017）**：`core.hooksPath` 已被 husky 等框架占用时，
+> 不要去抢它——把 keel 两个钩子本体**并入该框架的钩子文件**（`bash keel/checks/hooks/<钩子名>`）即可；
+> `verify-hooks.sh` 支持这种**链式挂载**：在"git 实际执行的钩子文件、或其父目录同名文件"里
+> 检出 keel 钩子本体路径即判就绪。首个采用方 lytjs（husky）验证了该路径。
 
 ---
 
