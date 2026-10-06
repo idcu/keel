@@ -30,9 +30,9 @@ keywords: [焦点, 采用日, macOS, 流式扫描, v3.4.7]
 ## 未完成
 
 - [ ] 遵守率无基线 —— lytjs 已接入，等提交累积
-- [x] **Windows 侧验证（QEMU VM）**：986/555s → 409/333s（**≈2.08×**）；注记见
-      `perf-findings.txt`（TCG/rc/未跑完项）
-- [x] **段 2 流式结算（#5 成功）**：lint 29→9s（3.3×；累计 ~7-10×）·43/43·
+- [x] **Windows 侧验证（QEMU VM）**：2.08×（段 3）与 **3.4×（段 2）**，均与 macOS
+      一致；rc/TCG 注记见 `perf-findings.txt`
+- [x] **段 2 流式结算（#5）**：macOS 29→9s（3.3×）·Windows 652→182s（3.4×）·43/43·
       套件 12min→12s；唯一差异（空文件行序）见 `perf-findings.txt`
 - [ ] 模板示例库是否随采用方清理，待观察
 
