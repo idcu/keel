@@ -2,7 +2,7 @@
 scope: meta
 status: active
 severity: P1
-last-verified: 2026-10-04
+last-verified: 2026-11-02
 keywords: [release.sh, tag未推送, follow-tags, ADR0010]
 triggers: 1
 ---
@@ -16,15 +16,13 @@ triggers: 1
 **`git push` 默认不推 tag**。脚本把"推送完成"当成功报出，没人复核 tag 到没到。
 
 ## 正解
-推分支时一并带 tag（已修）：
-```bash
-git -C "$SUB" push --follow-tags origin "$BR_STARTER"
-```
-`--follow-tags` 带上所有可达 tag，不用手写列表。失败只告警不中止
-（分支已推成功，中止反而留下更糟状态）。
+推分支带 tag（已修 `--follow-tags`）；失败只告警不中止。**但
+`--follow-tags` 只带 annotated tag**——2026-11-02 第二次命中：
+v3.4.12 打成 lightweight，输出 Everything up-to-date，tag 静默漏推。
+两条硬约定：① 发版 tag 一律 `git tag -a`（annotated）；
+② 发布后必查 `git ls-remote --tags`（第一版的判别法，仍成立）。
 
 ## 为什么值得登记
-**这是 ADR 0010 的第一个真实违约**——那条 ADR 写于两轮前，
-理由正是"tag 缺失让 `--ref` 失效"。**规则写对了，编排脚本却漏了。**
-与 `submodule-pointer-drift-not-machine-checked` 同族：
-机器没验的那一环，规则就等于不存在。判别法：发布后**必查 `ls-remote --tags`**。
+**ADR 0010 的两次真实违约**：规则写对、编排漏做；连上一版"正解"
+自身的假设也是错的。与 submodule-pointer-drift 同族：
+机器没验的那一环，规则就等于不存在。
