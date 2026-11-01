@@ -658,10 +658,10 @@ triggers ≥ 3 → lint 持续 ⚠️ 提醒
 > ② **BSD / macOS 的 `tsort` 遇环仍然返回 0**，只把 `cycle in data` 写到 stderr（GNU `tsort` 才返回 1），所以环检测必须同时看退出码与 stderr。
 > 这正是 §9 存在的理由：**"机器验的东西，必须先自己验过"**——包括验证脚本自己。
 
-**怎么复现这 41 例**：`keel-starter` 随仓库带自测套件，用例与 §9.1 检查表一一对应（每个用例都标注它对应哪一行）：
+**怎么复现这 42 例**：`keel-starter` 随仓库带自测套件，用例与 §9.1 检查表一一对应（每个用例都标注它对应哪一行）：
 
 ```bash
-bash keel/checks/test-lint.sh              # 41 例 + 元检查 + 文档一致性检查
+bash keel/checks/test-lint.sh              # 42 例 + 元检查 + 文档一致性检查
 bash keel/checks/test-lint.sh -v --keep     # 逐例详细输出，并保留临时 fixture 供排查
 ```
 
@@ -1645,7 +1645,7 @@ bash keel/checks/check-mcp-config.sh        # 恒 exit 0：未接入不算缺陷
 | ① 工具侧规则（§4 锚点） | 每次任务开始 | AI 按协议读取与写回；**锚点存在性与原文一致性由 lint 检查**（§9.1-10） |
 | ② pre-commit | `keel/` 下 md 有变更时 | `bash keel/checks/keel-lint.sh keel`，0 fail 才放行 |
 | ③ commit-msg | 每次提交 | 扫描 message 里的 `pitfall: <文件名>`，自动给对应条目 `triggers` +1 并 stage（§7.4） |
-| ④ CI | push / PR | lint 必须 0 fail；**自测必须 39/39**（`bash keel/checks/test-lint.sh`，§9.3）；钩子本体与可执行位由 lint 第 16 项守（§9.1）；PR 模板含"写回确认"勾选项 |
+| ④ CI | push / PR | lint 必须 0 fail；**自测必须 43/43**（`bash keel/checks/test-lint.sh`，§9.3）；钩子本体与可执行位由 lint 第 16 项守（§9.1）；PR 模板含"写回确认"勾选项 |
 | 兜底 | —— | `NOW.updated` 超 7 天 → lint ⚠️（提示会话可能未写回） |
 
 **【铁律】①②③④ 缺一，强制闭环就不成立。** 钩子由 `keel-starter` 的 `checks/install-hooks.sh` 落地（§12.1）——**只在文档里写钩子、不安装钩子，等于没有钩子**；v2 的"铁律"与 MVP 五件套自相矛盾（MVP 里既没有钩子也没有 CI），v3 已把四件事一起并入 MVP。
@@ -1797,7 +1797,7 @@ keel/
 └── checks/                  # keel-lint.sh + budget.env + rules.md + test-lint.sh/.py
 │                            # + install-hooks.sh + verify-hooks.sh + hooks/{pre-commit, commit-msg}
 ＋ archive/.gitkeep · NOW-history/.gitkeep   # 空目录不被 git 跟踪（§3.3 规则 5）
-＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 39/39（§10.4 之四）
+＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 43/43（§10.4 之四）
 ＋ PR 模板（.github/pull_request_template.md）——"写回确认"勾选项（§10.4 之四）
 ＋ 工具侧锚点 1 句（AGENTS.md 首行）——没有它，上面这些文件不会被读到（§10.4 之一）
 ＋ checks/keel-doctor.sh —— 装完一键自证（v3.4.5）
@@ -1815,7 +1815,7 @@ keel/
 2. 装钩子：`bash keel/checks/install-hooks.sh`（pre-commit + commit-msg）；
 3. 贴 CI 片段，并在项目根写入 §4.1 锚点；
 4. 跑 `bash keel/checks/keel-lint.sh keel`——**第一次自检必须 0 fail**（锚点也在检查范围内，§9.1-10）；
-5. 跑 `bash keel/checks/test-lint.sh`——**必须 39/39**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
+5. 跑 `bash keel/checks/test-lint.sh`——**必须 43/43**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
 
 **按需层（不进 MVP，痛点到了再加）**——starter 已带骨架，规格见 §5.7，"怎么填"写在同目录的 `_template*` 里：
 
@@ -1873,7 +1873,7 @@ keel/
 | 可获取 | 发布仓的 `vX.Y.Z` tag | **CI「版本号与 tag 一致」检查** |
 
 实测踩过：`keel-version` 升到 3.3.3、CHANGELOG 写了五节，**tag 却只到 v3.1.1**。
-后果不是"少几个标记"——`install.sh --ref v3.2.0`（README 亲口教用户这么用）直接失效，
+后果不是"少几个标记"——`install.sh --ref <旧版本>`（README 亲口教用户这么用）直接失效，
 用户无法固定版本，只能跟着 `main` 走。**"可复现的安装"是分发渠道的底线。**
 
 判据：**"版本号写对了"不等于"版本能用"。**

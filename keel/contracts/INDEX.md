@@ -1,7 +1,7 @@
 ---
 scope: api
 status: active
-last-verified: 2026-09-30
+last-verified: 2026-11-02
 keywords: [契约, API, 类型, 事件, SSOT]
 ---
 

@@ -1,7 +1,7 @@
 ---
 scope: meta
 status: active
-last-verified: 2026-09-30
+last-verified: 2026-11-02
 keywords: [技能, 操作手册, 索引]
 ---
 
