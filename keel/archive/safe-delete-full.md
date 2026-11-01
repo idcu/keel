@@ -1,6 +1,6 @@
 # safe-delete 垫片与路径归一化 · 完整记录（冷区）
 
-> 热区结论见 [../pitfalls/meta/safe-delete-shim-blocks-cleanup.md](../pitfalls/meta/safe-delete-shim-blocks-cleanup.md)。
+> 热区结论见 [../pitfalls/archive/safe-delete-shim-blocks-cleanup.md](../pitfalls/archive/safe-delete-shim-blocks-cleanup.md)。
 > 本篇是它的完整取证与踩坑过程——**§7.3「沉」，不占单轮加载预算**。
 
 ## 一、垫片的判别方法

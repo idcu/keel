@@ -20,6 +20,8 @@ keywords: [焦点, 评估整改, PROSE, v3.4.12]
 - [x] P2-2 更正：报告误判——两条坑 v3.4.4 起已 distilled 且宪法有行，关闭
 - [x] decisions/INDEX 撞 3000B 预算（3146）→ §7.3「提」压缩至 2965B（不动 budget.env）
 - [x] v3.4.12 双仓同步：INDEX / 徽章 / CHANGELOG / `--ref`；门禁 43/43 + DOC + PROSE 全绿
+- [x] release.sh 修 bash3.2 UTF-8 变量定界坑（4 处 `${VAR}`；推送段曾崩 unbound）→ 登记 `meta/bash3-utf8-varname-eats-byte`
+- [x] 两条 distilled 坑沉 `pitfalls/archive/`（§7.3，meta/ 21→20）；pitfalls/INDEX 压至 2978B
 
 ## 未完成
 
@@ -28,7 +30,7 @@ keywords: [焦点, 评估整改, PROSE, v3.4.12]
 
 ## 下一步
 
-1. decisions/INDEX 余量仅 35B：下条 ADR 前做域索引沉降（老 ADR 指针化，§7.3「沉」，属规格变更走人审）
+1. 域索引余量双薄（decisions 35B / pitfalls 22B）：下次新增前先做沉降（老条目指针化，§7.3「沉」，走人审）
 2. 观察 lytjs 第二周：遵守率趋势 / 蒸馏是否真触发
 3. PROSE 在双仓 CI 的首跑结果确认
 

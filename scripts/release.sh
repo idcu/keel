@@ -27,7 +27,7 @@ done
 
 die() { echo "❌ $1"; exit 1; }
 
-[ -e "$SUB/.git" ] || die "找不到子模块工作区: $SUB（先 git submodule update --init）"
+[ -e "$SUB/.git" ] || die "找不到子模块工作区: ${SUB}（先 git submodule update --init）"
 [ -f "$PROJ/.gitmodules" ] || die "项目仓缺 .gitmodules"
 
 echo "release · 项目仓=$PROJ · 发布仓=$SUB · 模式=$([ "$APPLY" -eq 1 ] && echo apply || echo dry-run)"
@@ -35,7 +35,7 @@ echo "release · 项目仓=$PROJ · 发布仓=$SUB · 模式=$([ "$APPLY" -eq 1 
 echo "── 1. 前置检查"
 if [ "$ALLOW_DIRTY" -eq 0 ]; then
   for r in "$PROJ" "$SUB"; do
-    [ -z "$(git -C "$r" status --porcelain)" ] || die "工作区不干净: $r（先提交 / stash，或用 --allow-dirty 跳过本检查）"
+    [ -z "$(git -C "$r" status --porcelain)" ] || die "工作区不干净: ${r}（先提交 / stash，或用 --allow-dirty 跳过本检查）"
   done
   echo "   ✅ 两侧工作区干净"
 else
@@ -69,7 +69,7 @@ if [ "$APPLY" -eq 1 ]; then
   [ "$BR_PROJ" = "HEAD" ] && die "项目仓处于 detached HEAD，无法推送"
 fi
 
-echo "   ① 发布仓（$BR_STARTER）—— 必须先推，否则②的指针没人能取到"
+echo "   ① 发布仓（${BR_STARTER}）—— 必须先推，否则②的指针没人能取到"
 if [ "$APPLY" -eq 1 ]; then
   git -C "$SUB" push -u origin "$BR_STARTER" || die "发布仓推送失败，已中止（项目仓未推送）"
   # **tag 也要推**（ADR 0010：`keel-version` 声明与 tag 可获取必须同时成立）。
@@ -88,7 +88,7 @@ case "$st2" in
   +*) die "推送前指针又失配（发布仓刚有新提交？）——在项目仓 git add keel-starter 后重跑" ;;
 esac
 
-echo "   ② 项目仓（$BR_PROJ）"
+echo "   ② 项目仓（${BR_PROJ}）"
 if [ "$APPLY" -eq 1 ]; then
   git -C "$PROJ" push -u origin "$BR_PROJ" || die "项目仓推送失败（发布仓已推送成功，重跑会跳过它）"
 else
