@@ -3,38 +3,34 @@ scope: now
 status: active
 last-verified: 2026-11-02
 updated: 2026-11-02
-keywords: [焦点, 评估整改, PROSE, v3.4.12]
+keywords: [焦点, 域索引沉降, locale泄漏, BM25检索, v3.5.0]
 ---
 
 # NOW · main
 
 ## 当前焦点
 
-**11-02 全维度评估（第四轮）问题清单全量落地 + 发 v3.4.12。** 上轮（性能收口 + 采用方首测）已归档 `NOW-history/`。
+**第五轮：四条主线全量落地 + 发 v3.5.0。** 上轮（PROSE + v3.4.12/13）已归档 `NOW-history/`。
 
 ## 本轮完成
 
-- [x] 第四轮评估：三条上轮 P0 实测转绿（裸 bash 修复 / 遵守率回预算 / 性能散布归零）
-- [x] P1-1/P1-2：test-lint 增 **PROSE 元检查**（ADR 0018）——散文数字从靠人记变机器判；14 处漂移全修
-- [x] P2-1：starter 遗留 NOW（10-15 度量回顾）补提交（2e8c07b）
-- [x] P2-2 更正：报告误判——两条坑 v3.4.4 起已 distilled 且宪法有行，关闭
-- [x] decisions/INDEX 撞 3000B 预算（3146）→ §7.3「提」压缩至 2965B（不动 budget.env）
-- [x] v3.4.12 双仓同步：INDEX / 徽章 / CHANGELOG / `--ref`；门禁 43/43 + DOC + PROSE 全绿
-- [x] release.sh 修 bash3.2 UTF-8 变量定界坑（4 处 `${VAR}`；推送段曾崩 unbound）→ 登记 `meta/bash3-utf8-varname-eats-byte`
-- [x] v3.4.12 tag 重打 annotated 推远端（lightweight 被 `--follow-tags` 静默漏推；同坑第二次命中）
-- [x] commit-msg 钩子修 glob `[A-Z]` locale 误判（两仓）——本机历次 triggers +1 曾静默失效；lint 段 3 LC_ALL 泄漏与段 4 隐式依赖登记人审
-- [x] 两条 distilled 坑沉 `pitfalls/archive/`（§7.3，meta/ 21→20）；pitfalls/INDEX 压至 2978B
+- [x] L1 域索引沉降：decisions/INDEX 2965→2510B（余 490B）、pitfalls/INDEX 2980→2570B（余 430B），不动 budget.env
+- [x] L2 lint 段3 `LC_ALL=C` 泄漏消除 + 段4 glob 字母表化 + LOCALE 自测（结构判死泄漏赋值）+ §9.3 同步；双 bash/双 locale 验证
+- [x] L3 bash3 坑蒸馏：`bash3-utf8-varname-eats-byte` 置 distilled，CONSTITUTION rule7 扩为四例
+- [x] L4 语义检索接入位参考实现：`checks/retrieval/keel-search.py`（纯 py3 BM25，k1=1.5/b=0.75）+ ADR 0019；49 篇索引 27.9ms、热路径中位 2.6–3.7ms、QPS≈322
+- [x] L5 lytjs 外部冒烟：keel lint 2s/55篇 0 fail、test-lint 43/43；lytjs keel 为 v3.4.11（含段3/4 locale 缺陷，需升 3.4.13+）；fast 门禁 11/11
+- [x] v3.5.0 双仓同步：INDEX 版本 / 徽章 / CHANGELOG / `--ref`；门禁 43/43 + DOC + LOCALE + PROSE 全绿
 
 ## 未完成
 
-- [ ] P2-3 语义检索接入位未实接（战略项，非代码缺陷）
+- [ ] lytjs 全量测试已实跑：**385 文件 / 8436 用例全绿，323.6s**（exit=0）；覆盖率 66.50% 仍为 2026-10-15 旧数据，未重跑 `vitest --coverage`
 - [ ] 外部采用度仍为零（代码层无解，属推广动作）
 
 ## 下一步
 
-1. 域索引余量双薄（decisions 35B / pitfalls 22B）：下次新增前先做沉降（老条目指针化，§7.3「沉」，走人审）
-2. 观察 lytjs 第二周：遵守率趋势 / 蒸馏是否真触发
-3. lint 段 3 `LC_ALL=C` 赋值泄漏 + 段 4 glob 隐式依赖（修复需同步 §9.3 + 双平台验证，人审）；bash3 坑 triggers=3 待蒸馏（宪法落点人审）
+1. lytjs 升级 keel 至 3.5.0（段3/4 locale 缺陷 + BM25 检索）
+2. 观察 lytjs 真实采用下遵守率趋势 / 蒸馏是否触发
+3. ADR 0019 升级条件：同义改写 top5 无命中占比 >10% 时启动 embedding
 
 ## 阻塞
 
