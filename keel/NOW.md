@@ -3,44 +3,29 @@ scope: now
 status: active
 last-verified: 2026-11-02
 updated: 2026-11-02
-keywords: [焦点, 分发断层, keel upgrade, manifest, v3.6.1]
+keywords: [焦点, 升级, manifest, 守卫, lytjs, 案例]
 ---
 
 # NOW · main
 
 ## 当前焦点
 
-**第六轮：根治分发断层。** 上轮发现 v3.4.11 采用方拿不到 v3.5.0 的 locale 修复
-（install.sh 白名单漏 test-lint.py + 已存在文件一律保留），只能手工同步。
-本轮做 `keel upgrade`：manifest 驱动、门禁对比、失败回滚、幂等，并用 lytjs 真跑回归。
+**第七轮：把「能升级」变成「敢升级」。** 上轮交付了 manifest 驱动的
+`keel upgrade`（ADR 0020），但发布侧没有守卫、真实采用方还没跑过一条命令。
+本轮补 CI 守卫、让 lytjs 首次 `--to` 跟进、把过程写成可公开案例。
+第六轮详情见 [history](NOW-history/2026-11-02-分发断层根治.md)。
 
-## 本轮完成
+## 本轮进度
 
-- [x] **主线一** `keel-upgrade.sh` + `checks/manifest.tsv`（四分类真源：
-  kernel 覆盖 / merge 只改版本行 / preserve 不动 / additive 父目录在才补）
-- [x] 升级前后各跑 lint + test-lint + 预算固定成本；失败整目录还原（exit 3）；
-  备份 `.keel-backup/`（保留 3 份 + restore.sh），不用 git 还原（怕吞未提交自定义）
-- [x] 幂等：已是目标版本明说「无需升级」；`--force` 才重放
-- [x] install.sh 已有分支**委派**给升级引擎（≤3.5.0 的引导路径 = 重跑 install）
-- [x] 自测 `test-upgrade.py` 10 例（正常/跨版本/保留自定义/失败回滚/幂等/…），10/10、51s
-- [x] ADR 0020 + DESIGN §12.3 四分类；CI 与 release.sh 接入自测
-- [x] 两仓门禁：lint 0 fail；test-lint 43/43（starter 10.1s / 项目 9.7s）
-- [x] **主线二** lytjs 真跑回归（临时副本，未碰作者在研提交）：3.4.11→3.6.0
-  一条命令 exit 0；内核 21/21 逐字节一致、46 个自定义全保留；与上轮手工同步相比
-  只多 v3.6.0 新增件；引擎 20.5s；幂等复跑「已是 v3.6.0，无需升级」。
-  详见 [回归报告](archive/keel-upgrade-regression-2026-11-02.md)
-- [x] **主线三** `keel-starter/QUICKSTART.md`：安装/首次门禁/最小自定义/升级回滚/
-  常见失败排查一页；TRY-KEEL 旧数字（41 例、v3.4.6）同步修正
-- [x] v3.6.1 补丁：test-upgrade 在规格仓实例下改用发布模板（原 8/10 假失败）
-
-## 未完成
-
-- [ ] 外部采用度仍为零（推广动作，非代码）
+- [x] 主线一 NOW 轮转：已完成项沉入 history，余量 ≥200B
+- [ ] 主线二 manifest 发布侧守卫（`--check-manifest` + CI 必过）
+- [ ] 主线三 lytjs 首次外部 `upgrade` 到 3.6.1
+- [ ] 主线四 采用过程写成一页公开案例
 
 ## 下一步
 
-1. lytjs 主仓择机用 `keel upgrade` 跟进到 v3.6.1（等作者推送在研提交后）
-2. 观察外部采用方首次升级的真实介入点，必要时补 `--skip-test-lint` 说明
+1. 观察真实采用方首次升级的介入点（本轮 lytjs 就是第一次），缺口写回 QUICKSTART
+2. 案例文档只在数字可复现时发布，样本单薄就写「不做 + 触发条件」
 
 ## 阻塞
 
