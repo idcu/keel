@@ -703,11 +703,17 @@ LINT_SECONDS=300
 #        bash checks/keel-lint.sh                     # 在 keel/ 内调用（默认 .）
 # 退出码: 0 = 通过（含 warn）；1 = 存在 fail；2 = keel 目录不存在
 # 口径:  热区 = 全部 md 减去 archive/ 与 NOW-history/；冷区只做死链检查。
-# 依赖:  bash 3.2+ / awk / sed / find / tsort（可选）/ git（仅 frozen 检查用）
+# 依赖:  bash 3.2+ / awk / sed / find / git（仅 frozen 检查用）
 set -uo pipefail
 
 KEEL_DIR="${1:-.}"; KEEL_DIR="${KEEL_DIR%/}"
 [ -d "$KEEL_DIR" ] || { echo "❌ 目录不存在: $KEEL_DIR"; exit 2; }
+# v3.7.3：入参先归一化成**绝对物理路径**。段 9 把链接规范化后与 find 输出逐字比对，
+# 而 norm() 会丢掉前导 `/` 与开头的 `.`（"/k/x"→"k/x"、"./x"→"x"），于是
+# `lint.sh "$(pwd)/keel"` 或 `cd keel && lint.sh`（文档里写着的默认 `.`）会把
+# 全部热区文档误报成孤儿——只有 `lint.sh keel` 这一种形式"碰巧"成立。
+# 归一化后三种调用形式的判据一致（test-lint 的 INVOKE 元检查守这条）。
+KEEL_DIR=$(cd "$KEEL_DIR" && pwd -P) || { echo "❌ 目录不可进入: $KEEL_DIR"; exit 2; }
 
 # ---------- 硬预算默认值（兜底；真源是 checks/budget.env） ----------
 MAX_INDEX=100;        BYTES_INDEX=4500
@@ -1250,15 +1256,26 @@ if [ -s "$LINKS" ]; then
 fi
 sort -u "$edges" -o "$edges"
 if [ -s "$edges" ]; then
-  if command -v tsort >/dev/null 2>&1; then
-    tsort "$edges" >/dev/null 2>"$tmp/tsort.err"; tsort_rc=$?
-    # 注意：BSD/macOS 的 tsort 遇环仍返回 0，只把 "cycle in data" 写到 stderr；
-    # GNU tsort 返回 1。所以"退出码非 0"和"stderr 非空"两个条件要一起看。
-    if [ "$tsort_rc" -ne 0 ] || [ -s "$tmp/tsort.err" ]; then
-      fail_msg "引用存在环（§3.1 禁止循环引用）: $(head -1 "$tmp/tsort.err")"
-    fi
-  else
-    warn_msg "环境无 tsort，跳过循环引用检查"
+  # 环检测不依赖 tsort（v3.7.3）：busybox / 精简镜像没有它，而"环境缺工具就跳过"
+  # 等于判据静默失效（实测 Alpine/busybox 上 test-lint 的「引用成环」用例失去判据）。
+  # 改用 awk 套 Kahn 拓扑排序：能消解全部节点 = 无环，有剩余 = 有环。
+  # 方向（引用者→被引用者）不影响"有无环"的判定，也省掉 BSD/GNU tsort 的退出码差异。
+  cyc=$(awk '
+    { adj[$1] = adj[$1] " " $2; ind[$2]++; nodes[$1] = 1; nodes[$2] = 1 }
+    END {
+      n = 0
+      for (k in nodes) { n++; d[k] = ind[k] + 0; if (d[k] == 0) q[++tail] = k }
+      head = 1; seen = 0
+      while (head <= tail) {
+        v = q[head++]; seen++
+        m = split(adj[v], a, " ")
+        for (i = 1; i <= m; i++) if (--d[a[i]] == 0) q[++tail] = a[i]
+      }
+      if (seen < n) { print n - seen " 个节点未能消解"; exit 1 }
+    }
+  ' "$edges" 2>/dev/null)
+  if [ $? -ne 0 ]; then
+    fail_msg "引用存在环（§3.1 禁止循环引用）: ${cyc:-拓扑排序后仍有节点未消解}"
   fi
 fi
 
@@ -1325,12 +1342,13 @@ echo "── 9. 孤儿（热区文档未被任何热区文档以链接引用；I
 # 拼两次会得到 keel/keel/xxx，于是每个文件都"未被引用"、全量误报孤儿（实测踩过）。
 awk -F'\t' '
   function norm(p,   parts, np, i, out, seg) {
-    np = split(p, parts, "/"); out = ""
+    np = split(p, parts, "/")
+    out = (substr(p, 1, 1) == "/" ? "/" : "")   # 绝对路径必须保住前导 /
     for (i = 1; i <= np; i++) {
       seg = parts[i]
       if (seg == "" || seg == ".") continue
       if (seg == "..") { sub(/\/[^\/]*$/, "", out); continue }
-      out = (out == "" ? seg : out "/" seg)
+      out = (out == "" || out == "/" ? out seg : out "/" seg)
     }
     return out
   }
@@ -1652,7 +1670,7 @@ bash keel/checks/check-mcp-config.sh        # 恒 exit 0：未接入不算缺陷
 | ① 工具侧规则（§4 锚点） | 每次任务开始 | AI 按协议读取与写回；**锚点存在性与原文一致性由 lint 检查**（§9.1-10） |
 | ② pre-commit | `keel/` 下 md 有变更时 | `bash keel/checks/keel-lint.sh keel`，0 fail 才放行 |
 | ③ commit-msg | 每次提交 | 扫描 message 里的 `pitfall: <文件名>`，自动给对应条目 `triggers` +1 并 stage（§7.4） |
-| ④ CI | push / PR | lint 必须 0 fail；**自测必须 43/43**（`bash keel/checks/test-lint.sh`，§9.3）；钩子本体与可执行位由 lint 第 16 项守（§9.1）；PR 模板含"写回确认"勾选项 |
+| ④ CI | push / PR | lint 必须 0 fail；**自测必须 44/44**（`bash keel/checks/test-lint.sh`，§9.3）；钩子本体与可执行位由 lint 第 16 项守（§9.1）；PR 模板含"写回确认"勾选项 |
 | 兜底 | —— | `NOW.updated` 超 7 天 → lint ⚠️（提示会话可能未写回） |
 
 **【铁律】①②③④ 缺一，强制闭环就不成立。** 钩子由 `keel-starter` 的 `checks/install-hooks.sh` 落地（§12.1）——**只在文档里写钩子、不安装钩子，等于没有钩子**；v2 的"铁律"与 MVP 五件套自相矛盾（MVP 里既没有钩子也没有 CI），v3 已把四件事一起并入 MVP。
@@ -1804,7 +1822,7 @@ keel/
 └── checks/                  # keel-lint.sh + budget.env + rules.md + test-lint.sh/.py
 │                            # + install-hooks.sh + verify-hooks.sh + hooks/{pre-commit, commit-msg}
 ＋ archive/.gitkeep · NOW-history/.gitkeep   # 空目录不被 git 跟踪（§3.3 规则 5）
-＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 43/43（§10.4 之四）
+＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 44/44（§10.4 之四）
 ＋ PR 模板（.github/pull_request_template.md）——"写回确认"勾选项（§10.4 之四）
 ＋ 工具侧锚点 1 句（AGENTS.md 首行）——没有它，上面这些文件不会被读到（§10.4 之一）
 ＋ checks/keel-doctor.sh —— 装完一键自证（v3.4.5）
@@ -1822,7 +1840,7 @@ keel/
 2. 装钩子：`bash keel/checks/install-hooks.sh`（pre-commit + commit-msg）；
 3. 贴 CI 片段，并在项目根写入 §4.1 锚点；
 4. 跑 `bash keel/checks/keel-lint.sh keel`——**第一次自检必须 0 fail**（锚点也在检查范围内，§9.1-10）；
-5. 跑 `bash keel/checks/test-lint.sh`——**必须 43/43**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
+5. 跑 `bash keel/checks/test-lint.sh`——**必须 44/44**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
 
 **按需层（不进 MVP，痛点到了再加）**——starter 已带骨架，规格见 §5.7，"怎么填"写在同目录的 `_template*` 里：
 
