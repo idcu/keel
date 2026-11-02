@@ -39,7 +39,10 @@ jobs:
       - name: 自测 + 规格一致性（在规格仓里 DOC 检查才真正生效）
         run: bash keel-starter/keel/checks/test-lint.sh
 
-      - name: 升级引擎自测（10 项场景）
+      - name: manifest 守卫（模板清单与实际文件的哈希 / 权限 / 版本）
+        run: bash keel-starter/keel/checks/keel-upgrade.sh --check-manifest keel-starter/keel
+
+      - name: 升级引擎自测（11 项场景）
         run: bash keel-starter/keel/checks/test-upgrade.sh
 
       - name: 发布仓模板自身过一遍 lint

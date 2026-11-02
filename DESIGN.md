@@ -1867,6 +1867,9 @@ keel/
   任一失败则整目录还原并给非零退出码；备份是 `<项目根>/.keel-backup/` 下的
   整目录副本（不依赖 VCS，采用方未提交的自定义不会被 `git checkout` 一起吞掉）；
   `keel-version` 已等于目标时明说"无需升级"并 `exit 0`，重复执行不产生额外改动；
+- 发布侧守卫（v3.7.0）：`--check-manifest` 在发布前逐行比对清单与实际文件的
+  sha256、权限位与清单头版本，不一致时指出**哪个文件、期望哈希、实际哈希**并 `exit 1`；
+  CI 与 `release.sh` 把它当必过项——改内核却忘重算清单，代价不该由采用方的升级来承担；
 - 版本声明：根 `INDEX.md` frontmatter 的 `keel-version` 字段（lint 强制其存在，§9.1-10）；
 - **破坏性变更**（改检索协议、改预算数字、加 frontmatter 必填字段）须在 `decisions/` 记 ADR，并在 CHANGELOG 里给出迁移命令；
 - 升级本身也要过 §10.4 的钩子：升完跑一次 `keel-lint.sh`，**允许 0 fail 才算升级完成**。
