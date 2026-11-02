@@ -1,7 +1,7 @@
 ---
 scope: meta
 status: active
-last-verified: 2026-11-02
+last-verified: 2026-11-03
 keywords: [升级, 分发, manifest, 回滚, 幂等]
 type: decision
 created: 2026-11-02
@@ -78,8 +78,11 @@ v3.4.11 的采用方（lytjs）升 v3.5.0 时，`install.sh` 的"已有 keel/"�
 
 ## 修订 · v3.7.0
 
-原设计把"清单是否过期"只交给自测第 9 条兜底，代价是**采用方升级时才发现**
-（「模板文件校验和不符」，是升级失败而不是发布失败）。补 `--check-manifest`：
-逐行比对 sha256、权限位与清单头版本，CI 与 `release.sh` 必过。
-同轮修两个生成侧缺陷：权限位原来沿用手写值（实测两处永久漂移）、
-kernel 行缺失时先写坏清单再报错。
+补 `--check-manifest`：逐行比对 sha256、权限位与清单头版本，CI 与 `release.sh` 必过；
+同轮修权限位漂移与「先写坏清单再报错」两个生成侧缺陷。
+
+## 修订 · v3.7.1
+
+补中断恢复：apply 期间原子写 `.keel-upgrade.pending`（目标版本/阶段/已完成文件
+sha256/备份目录）。重跑提示 `--resume` 或 `--rollback`（exit 5）；续跑校验已完成
+文件，不符或跨版本即拒绝，只处理剩余文件；成功与回滚都清 pending。自测 11 → 18 例。

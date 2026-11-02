@@ -1867,6 +1867,15 @@ keel/
   任一失败则整目录还原并给非零退出码；备份是 `<项目根>/.keel-backup/` 下的
   整目录副本（不依赖 VCS，采用方未提交的自定义不会被 `git checkout` 一起吞掉）；
   `keel-version` 已等于目标时明说"无需升级"并 `exit 0`，重复执行不产生额外改动；
+- 断点恢复（v3.7.1）：apply 期间把目标版本、阶段（preflight/backup/applying/gate/done）、
+  已完成文件与各自 sha256、备份目录、原版本号写入 `<项目根>/.keel-upgrade.pending`，
+  **每次写入都是「临时文件 + rename」原子替换**。重新运行会提示 `--resume` 与
+  `--rollback` 两条路并 `exit 5`；续跑前逐文件校验已完成文件的 sha256，任一不符
+  （或 pending 目标版本与本次命令不一致）即拒绝续跑、只允许回滚；续跑只处理剩余文件，
+  不得整目录重来；成功与回滚后都清 pending，回滚恢复升级前字节与权限；
+- 故障注入仅供自测：`KEEL_UPGRADE_TEST_HOOKS=1` 且 `KEEL_UPGRADE_FAULT=` `after:backup` /
+  `after:file:N` / `before:gate` 时在对应点 SIGKILL 自己，模拟强杀 / 断网 / 磁盘满。
+  **双开关缺一即忽略并告警**——默认关闭，不影响正常路径的判据；
 - 发布侧守卫（v3.7.0）：`--check-manifest` 在发布前逐行比对清单与实际文件的
   sha256、权限位与清单头版本，不一致时指出**哪个文件、期望哈希、实际哈希**并 `exit 1`；
   CI 与 `release.sh` 把它当必过项——改内核却忘重算清单，代价不该由采用方的升级来承担；
