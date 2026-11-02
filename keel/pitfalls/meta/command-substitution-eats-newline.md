@@ -3,7 +3,7 @@ scope: meta
 status: active
 severity: P2
 last-verified: 2026-11-03
-triggers: 0
+triggers: 1
 keywords: [命令替换, 换行, 死循环, 字符串拆分, shell, 退出码, 命令组, 原子写]
 ---
 

@@ -4,7 +4,7 @@ status: distilled
 severity: P1
 last-verified: 2026-11-02
 keywords: [bash3.2, UTF-8, locale, 变量定界, glob范围]
-triggers: 3
+triggers: 4
 ---
 
 > **已蒸馏**：上提至 `CONSTITUTION.md` 硬约束第 7 条第四例。
