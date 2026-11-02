@@ -52,10 +52,12 @@ esac
 
 echo "── 2. 发布仓自检（不通过就不许推）"
 if [ "$APPLY" -eq 1 ]; then
+  ( cd "$SUB" && bash keel/checks/keel-upgrade.sh --check-manifest keel ) || die "发布仓 manifest 与实际文件不一致（跑 --regen-manifest 重算）"
   ( cd "$SUB" && bash keel/checks/test-lint.sh ) || die "发布仓自测未通过"
   ( cd "$SUB" && bash keel/checks/test-upgrade.sh ) || die "发布仓升级引擎自测未通过"
   ( cd "$SUB" && bash keel/checks/keel-lint.sh keel ) || die "发布仓 keel-lint 未通过"
 else
+  echo "   [dry-run] (cd keel-starter && bash keel/checks/keel-upgrade.sh --check-manifest keel)"
   echo "   [dry-run] (cd keel-starter && bash keel/checks/test-lint.sh)"
   echo "   [dry-run] (cd keel-starter && bash keel/checks/test-upgrade.sh)"
   echo "   [dry-run] (cd keel-starter && bash keel/checks/keel-lint.sh keel)"
