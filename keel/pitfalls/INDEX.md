@@ -27,4 +27,4 @@ keywords: [坑库, 索引, shell, 性能, 批量化]
 | release.sh 推分支漏 tag | meta | P1 | [meta/release-pushes-branch-not-tag.md](meta/release-pushes-branch-not-tag.md) |
 | keel-lite --apply 后 6 孤儿 exit 1 | meta | P1 | [meta/lite-strips-index-before-delete.md](meta/lite-strips-index-before-delete.md) |
 | macOS awk 误报孤儿/丢末件字段 | meta | P0 | [meta/awk-gawk-gaps.md](meta/awk-gawk-gaps.md) |
-| bash3 UTF-8 下 $VAR+全角炸 unbound | meta | P1 | [meta/bash3-utf8-varname-eats-byte.md](meta/bash3-utf8-varname-eats-byte.md) |
+| bash3 UTF-8 下 $VAR吞字节/glob误判 | meta | P1 | [meta/bash3-utf8-varname-eats-byte.md](meta/bash3-utf8-varname-eats-byte.md) |

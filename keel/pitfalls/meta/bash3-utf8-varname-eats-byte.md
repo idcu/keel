@@ -3,27 +3,26 @@ scope: meta
 status: active
 severity: P1
 last-verified: 2026-11-02
-keywords: [bash3.2, UTF-8, 变量名定界, 全角字符, release]
+keywords: [bash3.2, UTF-8, locale, 变量定界, glob范围, release]
 triggers: 2
 ---
 
 ## 症状
 
-`release.sh --apply` 自检全绿后，推送段第一行 echo 即崩
-（`BR_STARTER�: unbound variable`，`set -u`），发布一步未执行。
-dry-run 同炸；C/POSIX locale 正常，UTF-8 locale（zh_CN/en_US）必现。
+① release.sh 推送段崩 `BR_STARTER�: unbound`（set -u）：UTF-8 locale 下
+bash 3.2 词法把全角括号首字节吞进 `$VAR` 变量名。② commit-msg 钩子对所有
+合法坑文件名一律「跳过非 kebab-case」——本机历次 triggers +1 从未生效
+（glob `*[A-Z]*` 按 collation 匹配小写）。
 
 ## 根因
 
-macOS 自带 bash 3.2.57 在 **UTF-8 locale** 下解析 `"（$VAR）"` 时，
-把全角 `）`（EF BC 89）的**首字节**吞进变量名 → `VAR\xef` 未定义。
-C locale 按单字节处理反而正常——bash 3.2 多字节词法有 bug，
-`$VAR` 后紧跟任何非 ASCII 字符都不安全。与 harness-invokes-bare-bash
-同族：脚本行为再次被交给用户机器的环境（这次是 locale）。
+macOS 自带 bash 3.2.57 在 UTF-8 locale 下：`$VAR` 后吞非 ASCII 首字节；
+glob `[A-Z]` 按 collation 展开（≈[a-zA-Z]）。C/POSIX 皆正常。连带发现：
+lint 段 4 同款 glob"碰巧正确"——靠段 3 `LC_ALL=C XLIST=…;` 独立赋值的
+泄漏把进程 locale 变 C；泄漏消除前不得动段 3（修复同步 §9.3，人审）。
 
 ## 正解
 
-变量展开一律写 **`${VAR}`** 显式定界，不依赖 locale 词法。release.sh
-4 处（`$SUB（` / `$r（` / `$BR_STARTER）` / `$BR_PROJ）`）加花括号后，
-四种 locale 的 dry-run 全过。排查同类：
-`grep -nP '(?-u)\$[A-Za-z_][A-Za-z0-9_]*[\x80-\xff]' <脚本>`。
+写法不依赖 locale：`${VAR}` 显式定界；大小写判断把 `[A-Z]` 展开成字母表
+（commit-msg 钩子两仓已修）。排查：`grep -nP '(?-u)\$[A-Za-z_]+[\x80-\xff]|\[A-Z\]' <脚本>`。
+历史 triggers 计数路径未审计。

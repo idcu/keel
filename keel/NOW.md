@@ -22,6 +22,7 @@ keywords: [焦点, 评估整改, PROSE, v3.4.12]
 - [x] v3.4.12 双仓同步：INDEX / 徽章 / CHANGELOG / `--ref`；门禁 43/43 + DOC + PROSE 全绿
 - [x] release.sh 修 bash3.2 UTF-8 变量定界坑（4 处 `${VAR}`；推送段曾崩 unbound）→ 登记 `meta/bash3-utf8-varname-eats-byte`
 - [x] v3.4.12 tag 重打 annotated 推远端（lightweight 被 `--follow-tags` 静默漏推；同坑第二次命中）
+- [x] commit-msg 钩子修 glob `[A-Z]` locale 误判（两仓）——本机历次 triggers +1 曾静默失效；lint 段 3 LC_ALL 泄漏与段 4 隐式依赖登记人审
 - [x] 两条 distilled 坑沉 `pitfalls/archive/`（§7.3，meta/ 21→20）；pitfalls/INDEX 压至 2978B
 
 ## 未完成
@@ -33,7 +34,7 @@ keywords: [焦点, 评估整改, PROSE, v3.4.12]
 
 1. 域索引余量双薄（decisions 35B / pitfalls 22B）：下次新增前先做沉降（老条目指针化，§7.3「沉」，走人审）
 2. 观察 lytjs 第二周：遵守率趋势 / 蒸馏是否真触发
-3. PROSE 在双仓 CI 的首跑结果确认
+3. lint 段 3 `LC_ALL=C` 赋值泄漏 + 段 4 glob 隐式依赖（修复需同步 §9.3 + 双平台验证，人审）；bash3 坑 triggers=3 待蒸馏（宪法落点人审）
 
 ## 阻塞
 
