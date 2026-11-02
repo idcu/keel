@@ -3,7 +3,7 @@ scope: meta
 status: active
 severity: P0
 last-verified: 2026-11-02
-triggers: 0
+triggers: 1
 keywords: [假成功, 校验对象, cwd, install, doctor, 自测]
 ---
 
