@@ -3,7 +3,7 @@ scope: now
 status: active
 last-verified: 2026-11-02
 updated: 2026-11-02
-keywords: [焦点, 分发断层, keel upgrade, manifest, v3.6.0]
+keywords: [焦点, 分发断层, keel upgrade, manifest, v3.6.1]
 ---
 
 # NOW · main
@@ -23,14 +23,15 @@ keywords: [焦点, 分发断层, keel upgrade, manifest, v3.6.0]
 - [x] 幂等：已是目标版本明说「无需升级」；`--force` 才重放
 - [x] install.sh 已有分支**委派**给升级引擎（≤3.5.0 的引导路径 = 重跑 install）
 - [x] 自测 `test-upgrade.py` 10 例（正常/跨版本/保留自定义/失败回滚/幂等/…），10/10、51s
-- [x] ADR 0020 + DESIGN §12.3 四分类 + CHANGELOG 3.6.0；CI 与 release.sh 接入自测
+- [x] ADR 0020 + DESIGN §12.3 四分类；CI 与 release.sh 接入自测
 - [x] 两仓门禁：lint 0 fail；test-lint 43/43（starter 10.1s / 项目 9.7s）
 - [x] **主线二** lytjs 真跑回归（临时副本，未碰作者在研提交）：3.4.11→3.6.0
-  一条命令 exit 0；内核 21/21 与模板逐字节一致、46 个自定义文件全保留；
-  与上轮手工同步相比只多 v3.6.0 新增件；引擎 20.5s（两次 test-lint 约 18s）；
-  幂等复跑「✅ 已是 v3.6.0，无需升级」。详见 [回归报告](archive/keel-upgrade-regression-2026-11-02.md)
+  一条命令 exit 0；内核 21/21 逐字节一致、46 个自定义全保留；与上轮手工同步相比
+  只多 v3.6.0 新增件；引擎 20.5s；幂等复跑「已是 v3.6.0，无需升级」。
+  详见 [回归报告](archive/keel-upgrade-regression-2026-11-02.md)
 - [x] **主线三** `keel-starter/QUICKSTART.md`：安装/首次门禁/最小自定义/升级回滚/
-  常见失败排查一页；命令逐条实跑；TRY-KEEL 旧数字（41 例、v3.4.6）同步修正
+  常见失败排查一页；TRY-KEEL 旧数字（41 例、v3.4.6）同步修正
+- [x] v3.6.1 补丁：test-upgrade 在规格仓实例下改用发布模板（原 8/10 假失败）
 
 ## 未完成
 
@@ -38,7 +39,7 @@ keywords: [焦点, 分发断层, keel upgrade, manifest, v3.6.0]
 
 ## 下一步
 
-1. lytjs 主仓择机用 `keel upgrade` 跟进到 v3.6.0（等作者推送在研提交后）
+1. lytjs 主仓择机用 `keel upgrade` 跟进到 v3.6.1（等作者推送在研提交后）
 2. 观察外部采用方首次升级的真实介入点，必要时补 `--skip-test-lint` 说明
 
 ## 阻塞
