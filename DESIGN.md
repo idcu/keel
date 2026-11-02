@@ -1846,14 +1846,27 @@ keel/
 ### 12.3 分发与升级
 
 - `keel-starter`：模板仓库（MVP 全部文件 + CI 示例 + 锚点片段 + `checks/install-hooks.sh`）；
-- 升级：starter 发版带 CHANGELOG，各仓库按 `keel-version` **增量合并**。文件按三类处理，**不允许"一键覆盖"**：
+- 升级：starter 发版带 CHANGELOG，各仓库按 `keel-version` **增量合并**，**不允许"一键覆盖"**。
+  分类的**唯一真源是模板里的 `keel/checks/manifest.tsv`**（TSV：分类 / 路径 / 权限 / sha256），
+  脚本与文档都不得再写字面量文件清单——清单散落各处时，漏一个文件不会报任何错。
+  文件按四类处理：
 
 | 类别 | 文件 | 升级动作 |
 |---|---|---|
+| **内核，按版本覆盖** | `checks/`（lint、自测、钩子、install、retrieval、MCP）、`.gitattributes` | 校验 sha256 后覆盖；本地改过的另存备份并告警 |
 | **纯本地，永不覆盖** | `pitfalls/`、`contracts/`、`decisions/`、`env/`、`archive/`、`NOW-history/` | 完全跳过 |
 | **结构合并** | `INDEX.md` | 只合并 frontmatter 的 `keel-version` 与 §8 检索协议正文；**路由表、`project-state` 保留本地** |
-| **本地优先** | `NOW.md`、`ARCHITECTURE.md`、`GLOSSARY.md`、`CONSTITUTION.md` 的身份与硬约束段 | 有本地改动则不覆盖，只在 `decisions/` 记一条"待人工合并" |
+| **本地优先** | `NOW.md`、`ARCHITECTURE.md`、`GLOSSARY.md`、`CONSTITUTION.md`、`checks/rules.md`、`checks/budget.env` | 有本地改动则不覆盖，只在 `decisions/` 记一条"待人工合并" |
+| **新增结构文件** | `_template*`、`archive/.gitkeep` 等 | **父目录已存在**且文件缺失时才补（不复活已裁剪的层） |
 
+- 升级入口一分为二（ADR 0020）：`install.sh` 负责**新建**（全量复制），
+  `keel/checks/keel-upgrade.sh` 负责**升级**（按 manifest 分类增量合并）。
+  已有 `keel/` 时重跑 `install.sh` 会委派给升级引擎——这也是 ≤3.5.0 仓库的
+  **引导路径**（旧版没有升级脚本，重跑 install 把新引擎拉起来）；
+- 升级过程必须**可验证、可回滚、幂等**：升级前后各跑一次 lint + 自测 + 预算固定成本，
+  任一失败则整目录还原并给非零退出码；备份是 `<项目根>/.keel-backup/` 下的
+  整目录副本（不依赖 VCS，采用方未提交的自定义不会被 `git checkout` 一起吞掉）；
+  `keel-version` 已等于目标时明说"无需升级"并 `exit 0`，重复执行不产生额外改动；
 - 版本声明：根 `INDEX.md` frontmatter 的 `keel-version` 字段（lint 强制其存在，§9.1-10）；
 - **破坏性变更**（改检索协议、改预算数字、加 frontmatter 必填字段）须在 `decisions/` 记 ADR，并在 CHANGELOG 里给出迁移命令；
 - 升级本身也要过 §10.4 的钩子：升完跑一次 `keel-lint.sh`，**允许 0 fail 才算升级完成**。

@@ -3,43 +3,39 @@ scope: now
 status: active
 last-verified: 2026-11-02
 updated: 2026-11-02
-keywords: [焦点, 域索引沉降, locale泄漏, BM25检索, v3.5.0]
+keywords: [焦点, 分发断层, keel upgrade, manifest, v3.6.0]
 ---
 
 # NOW · main
 
 ## 当前焦点
 
-**第五轮：四条主线全量落地 + 发 v3.5.0。** 上轮（PROSE + v3.4.12/13）已归档 `NOW-history/`。
+**第六轮：根治分发断层。** 上轮发现 v3.4.11 采用方拿不到 v3.5.0 的 locale 修复
+（install.sh 白名单漏 test-lint.py + 已存在文件一律保留），只能手工同步。
+本轮做 `keel upgrade`：manifest 驱动、门禁对比、失败回滚、幂等，并用 lytjs 真跑回归。
 
 ## 本轮完成
 
-- [x] L1 域索引沉降：decisions/INDEX 2965→2510B（余 490B）、pitfalls/INDEX 2980→2570B（余 430B），不动 budget.env
-- [x] L2 lint 段3 `LC_ALL=C` 泄漏消除 + 段4 glob 字母表化 + LOCALE 自测（结构判死泄漏赋值）+ §9.3 同步；双 bash/双 locale 验证
-- [x] L3 bash3 坑蒸馏：`bash3-utf8-varname-eats-byte` 置 distilled，CONSTITUTION rule7 扩为四例
-- [x] L4 语义检索接入位参考实现：`checks/retrieval/keel-search.py`（纯 py3 BM25，k1=1.5/b=0.75）+ ADR 0019；49 篇索引 27.9ms、热路径中位 2.6–3.7ms、QPS≈322
-- [x] L5 lytjs 外部冒烟：keel lint 2s/55篇 0 fail、test-lint 43/43；lytjs keel 为 v3.4.11（含段3/4 locale 缺陷，需升 3.4.13+）；fast 门禁 11/11
-- [x] v3.5.0 双仓同步：INDEX 版本 / 徽章 / CHANGELOG / `--ref`；门禁 43/43 + DOC + LOCALE + PROSE 全绿
-- [x] lytjs 升级 keel v3.4.11 → v3.5.0（提交 `dab27d73`，已推送 `v7.0.0-dev`）：同步 4 工具链文件 + BM25 检索 + 版本号；**不动** lytjs 自定义 rules/CONSTITUTION/decisions/pitfalls
+- [x] **主线一** `keel-upgrade.sh` + `checks/manifest.tsv`（四分类真源：
+  kernel 覆盖 / merge 只改版本行 / preserve 不动 / additive 父目录在才补）
+- [x] 升级前后各跑 lint + test-lint + 预算固定成本；失败整目录还原（exit 3）；
+  备份 `.keel-backup/`（保留 3 份 + restore.sh），不用 git 还原（怕吞未提交自定义）
+- [x] 幂等：已是目标版本明说「无需升级」；`--force` 才重放
+- [x] install.sh 已有分支**委派**给升级引擎（≤3.5.0 的引导路径 = 重跑 install）
+- [x] 自测 `test-upgrade.py` 10 例（正常/跨版本/保留自定义/失败回滚/幂等/…），10/10、51s
+- [x] ADR 0020 + DESIGN §12.3 四分类 + CHANGELOG 3.6.0；CI 与 release.sh 接入自测
+- [x] 两仓门禁：lint 0 fail；test-lint 43/43（starter 10.1s / 项目 9.7s）
 
 ## 未完成
 
-- [ ] 外部采用度仍为零（代码层无解，属推广动作）
+- [ ] 主线二 lytjs 真跑升级回归（临时副本，不动作者在研提交）
+- [ ] 主线三 五分钟接入 quickstart
+- [ ] 外部采用度仍为零（推广动作，非代码）
 
 ## 下一步
 
-1. 观察 lytjs 真实采用下遵守率趋势 / 蒸馏是否触发
-2. ADR 0019 升级条件：同义改写 top5 无命中占比 >10% 时启动 embedding
-
-### lytjs v3.5.0 升级验证数字（2026-11-02）
-
-- keel lint（zh_CN.UTF-8）：0 fail，1.82s，55 篇
-- test-lint：43/43 + LOCALE PASS + PROSE PASS，13.8s
-- lytjs 全量测试：8436/8436，385 文件，317.23s（exit=0）
-- lytjs fast 门禁：12/12，5.4s
-- 覆盖率（clover.xml）：statements 87.66% / branches 87.73% / functions 88.00% / lines 87.69%（阈值 66.5/86.2/72.2/66.5 全过；原 66.50% 为 2026-10-15 旧数据）
-- locale 结论：修复在非作者环境成立，未暴露被掩盖的问题（无误报无漏报）
-- 详见 `archive/lytjs-smoke-test-2026-11-02.md` §五
+1. lytjs 回退 v3.4.11 快照 → `keel upgrade` → 与上轮手工同步结果比对（文件集/哈希/门禁）
+2. 写 `QUICKSTART.md`（安装/首跑/最小自定义/升级回滚/排错），命令实跑通过
 
 ## 阻塞
 

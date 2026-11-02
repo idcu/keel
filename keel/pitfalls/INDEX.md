@@ -28,3 +28,4 @@ keywords: [坑库, 索引, shell, 性能, 批量化]
 | keel-lite 6孤儿exit1 | meta | P1 | [lite-strips-index-before-delete](meta/lite-strips-index-before-delete.md) |
 | macOS awk误报孤儿丢末件 | meta | P0 | [awk-gawk-gaps](meta/awk-gawk-gaps.md) |
 | bash3 UTF-8吞字节/glob误判(蒸馏) | meta | P1 | [bash3-utf8-varname-eats-byte](meta/bash3-utf8-varname-eats-byte.md) |
+| 升级漏文件且无检查会报 | meta | P1 | [distribution-list-drift](meta/distribution-list-drift.md) |
