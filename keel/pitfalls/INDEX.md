@@ -11,7 +11,7 @@ keywords: [坑库, 索引, shell, 性能, 批量化]
 | shell查表挂死 | meta | P2 | [command-substitution-eats-newline](meta/command-substitution-eats-newline.md) |
 | wc total假fail | meta | P2 | [wc-total-line-treated-as-file](meta/wc-total-line-treated-as-file.md) |
 | install验错对象 | meta | P0 | [install-verifies-wrong-dir](meta/install-verifies-wrong-dir.md) |
-| awk字典序峰值偏小 | meta | P2 | [awk-string-vs-number-compare](meta/awk-string-vs-number-compare.md) |
+| awk字典序峰值偏小 | meta | P2 | [awk-string-vs-number-compare](archive/awk-string-vs-number-compare.md) |
 | install遍历shift吃版本 | meta | P0 | [arg-parse-shift-while-iterating](meta/arg-parse-shift-while-iterating.md) |
 | JSON空值n/a解析失败 | meta | P2 | [handwritten-json-nan-placeholder](meta/handwritten-json-nan-placeholder.md) |
 | 两仓全绿submodule有+ | meta | P1 | [submodule-pointer-drift-not-machine-checked](meta/submodule-pointer-drift-not-machine-checked.md) |
@@ -29,3 +29,4 @@ keywords: [坑库, 索引, shell, 性能, 批量化]
 | macOS awk误报孤儿丢末件 | meta | P0 | [awk-gawk-gaps](meta/awk-gawk-gaps.md) |
 | bash3 UTF-8吞字节/glob误判(蒸馏) | meta | P1 | [bash3-utf8-varname-eats-byte](meta/bash3-utf8-varname-eats-byte.md) |
 | 升级漏文件且无检查会报 | meta | P1 | [distribution-list-drift](meta/distribution-list-drift.md) |
+| 升级磁盘满假成功 | meta | P0 | [upgrade-silent-write-failure](meta/upgrade-silent-write-failure.md) |
