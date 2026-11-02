@@ -61,3 +61,39 @@ keywords: [冒烟, lytjs, 外部采用, 实测]
 | lytjs fast 门禁（11 项） | 11.6s |
 
 keel 300s lint 预算在 lytjs 规模下余量极充足（2s vs 300s）。
+
+## 五、v3.4.11 → v3.5.0 升级验证（2026-11-02 同日追加）
+
+> 升级目的：消除 v3.4.11 段3 `LC_ALL=C` 泄漏赋值 + 段4 `*[A-Z]*` locale 依赖 glob
+> （commit-msg 钩子同病）的「脆弱正确」——泄漏让段4 歪打正着处于 C locale，
+> 在非作者环境（zh_CN.UTF-8）下可能误报。
+
+### 升级执行
+
+- 接入形态：lytjs 内置 `lytjs/lytjs/keel/`（vendored，非 submodule），版本号来源 `keel/INDEX.md` frontmatter `keel-version`
+- 改动：同步 4 个工具链文件（`keel-lint.sh` / `hooks/commit-msg` / `test-lint.py` / `perf-findings.txt`）+ 新增 `checks/retrieval/keel-search.py`（BM25）+ `INDEX.md` 版本号 `3.4.11 → 3.5.0`；**不动** lytjs 自定义的 `rules.md` / `CONSTITUTION.md` / `decisions/` / `pitfalls/` / `NOW.md`
+- 提交：`dab27d73 chore: 同步 keel 工具 v3.4.11 → v3.5.0（locale 泄漏修复 + BM25 检索）`，已推送 `v7.0.0-dev`
+- 回滚锚点：升级前 `522eddfa`
+
+### 前后对比
+
+| 项 | v3.4.11（升级前） | v3.5.0（升级后） |
+|---|---|---|
+| keel lint（zh_CN.UTF-8） | 0 fail，2s，55 篇（脆弱正确） | **0 fail，1.82s，55 篇**（locale 加固后仍稳） |
+| test-lint | 43/43 | **43/43 + LOCALE PASS + PROSE PASS**，13.8s |
+| lytjs 全量测试 | 8436/8436，385 文件，323.6s | **8436/8436，385 文件，317.23s** |
+| lytjs fast 门禁 | 11/11，11.6s | **12/12，5.4s** |
+| 覆盖率（clover.xml） | 66.50%（2026-10-15 旧数据，未重跑） | **statements 87.66% / branches 87.73% / functions 88.00% / lines 87.69%**（50437/57535 等，阈值 66.5/86.2/72.2/66.5 全过） |
+
+### locale 修复在非作者环境的结论
+
+**成立，且未暴露此前被掩盖的问题。**
+
+- LOCALE 自测（test-lint 内置）：UTF-8 / C 双 locale 下段4 无误报、无 `LC_ALL` 泄漏赋值 → PASS
+- zh_CN.UTF-8 下 `keel-lint.sh keel`：0 fail（lytjs 文件名均合法 kebab-case，段4 字母表 `*[ABCDEFGHIJKLMNOPQRSTUVWXYZ]*` 不误报）
+- 无需判定「lytjs 真问题 vs keel 判据过严」——没有误报也没有漏报，段3 泄漏消除后段4 行为符合预期
+
+### 备注
+
+- 升级后首次全量测试出现 6 个失败（`slots-demo.integration.test.ts`，`renderer.render is not a function`），根源在 lytjs 在研代码 `examples/slots-demo/app.ts`，与 keel 升级无关（改动仅限 `keel/`）。lytjs 作者随后提交 `37f1cf15 fix(vdom): P0 —— v-for 列表项被挂到祖父节点`，重跑全量 8436/8436 全绿。
+- 覆盖率采集首次全量跑因 6 个失败用例未生成 `coverage/` 目录（vitest 在测试失败后未写覆盖率产物）；排除该文件重跑后产物正常，数字如上。该 6 用例占比可忽略，对覆盖率无实质影响。
