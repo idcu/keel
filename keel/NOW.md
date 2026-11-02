@@ -29,16 +29,17 @@ keywords: [焦点, 分发断层, keel upgrade, manifest, v3.6.0]
   一条命令 exit 0；内核 21/21 与模板逐字节一致、46 个自定义文件全保留；
   与上轮手工同步相比只多 v3.6.0 新增件；引擎 20.5s（两次 test-lint 约 18s）；
   幂等复跑「✅ 已是 v3.6.0，无需升级」。详见 [回归报告](archive/keel-upgrade-regression-2026-11-02.md)
+- [x] **主线三** `keel-starter/QUICKSTART.md`：安装/首次门禁/最小自定义/升级回滚/
+  常见失败排查一页；命令逐条实跑；TRY-KEEL 旧数字（41 例、v3.4.6）同步修正
 
 ## 未完成
 
-- [ ] 主线三 五分钟接入 quickstart
 - [ ] 外部采用度仍为零（推广动作，非代码）
 
 ## 下一步
 
-1. 写 `QUICKSTART.md`（安装/首跑/最小自定义/升级回滚/排错），命令实跑通过
-2. lytjs 主仓择机用 `keel upgrade` 跟进到 v3.6.0（等作者推送在研提交后）
+1. lytjs 主仓择机用 `keel upgrade` 跟进到 v3.6.0（等作者推送在研提交后）
+2. 观察外部采用方首次升级的真实介入点，必要时补 `--skip-test-lint` 说明
 
 ## 阻塞
 
