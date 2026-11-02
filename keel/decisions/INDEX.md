@@ -23,4 +23,5 @@ keywords: [决策, ADR, 索引, 性能, 批量化]
 | 0016 | 版本副本检查收窄：徽章=发行仓声明 | active | [0016-changelog-check-requires-badge.md](0016-changelog-check-requires-badge.md) |
 | 0017 | 链式挂载：框架并入调用keel本体 | active | [0017-chained-mount.md](0017-chained-mount.md) |
 | 0018 | 散文数字机器校验(PROSE)，历史须带版本号 | active | [0018-prose-numbers-machine-checked.md](0018-prose-numbers-machine-checked.md) |
+| 0019 | 语义检索接入位参考实现：纯py3 BM25 | active | [0019-bm25-retrieval-reference.md](0019-bm25-retrieval-reference.md) |
 | ~~0011/0012~~ | 已并入 0009（回填不进分母/写回过门禁），原文沉 archive/ | archived | [archive/](archive/) |
