@@ -4,7 +4,7 @@ status: active
 severity: P1
 last-verified: 2026-11-02
 keywords: [bash3.2, UTF-8, locale, 变量定界, glob范围, release]
-triggers: 2
+triggers: 3
 ---
 
 ## 症状
