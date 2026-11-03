@@ -208,7 +208,25 @@ starter 一致（发布模板不含 `DESIGN.md`），不是 locale 引起的差�
 
 ## 9. 发布与跨版本冒烟
 
-- 版本：3.11.0（minor：新增引导语义修复、矩阵格、机器可读清单）。
-- 推送顺序：`scripts/release.sh --apply`（starter → 项目仓），annotated tag + `ls-remote` 核对。
-- 冒烟：v3.8.0 真实安装 → 升到 3.11.0，确认不再因备份布局差异误判失败。
-  命令与结果在交付回复中记录；本文件不预填未执行的结果。
+- 版本：3.11.0（minor：旧引擎续跑修复、矩阵 3.6.1、机器可读清单）。
+- 发布：`bash scripts/release.sh --apply` 在推送前重跑完整验证，结果为
+  **98 通过 / 0 失败 / 1 跳过（未验证）**，判据放行 CHANGELOG 后按顺序推送：
+  - starter `main`：`0c3f5df..4016ed4`；annotated tag `v3.11.0`（tag 对象
+    `771d1ef`，peeled `4016ed4`）
+  - 项目仓 `main`：`48bb60e..6e6b0a6`（子模块指针 = `4016ed4`）；
+    本文件与 NOW 的收尾记录在 `6e6b0a6` 之后单独提交并推送（发布仓不再变动）
+  - `ls-remote` 双向核对：两仓 `refs/heads/main` 与本地 HEAD 一致；
+    `refs/tags/v3.11.0^{}` = `4016ed4`，不存在「声明了版本但取不到 tag」。
+
+- 冒烟（真实 clone tag，不用工作区）：
+  1. `git clone --depth 1 --branch v3.8.0 … /tmp/keel-smoke-old` →
+     `bash …/install.sh /tmp/keel-smoke-proj --ref v3.8.0 --with-anchor`，rc 0，
+     `keel-version: 3.8.0`，lint 通过。
+     （首次误用不带 `--ref` 的旧 install.sh：它默认取 `main`，装成 3.11.0；
+     故本次冒烟显式钉 `--ref`，避免把「装到最新」误当成「装到旧版」。）
+  2. `bash /tmp/keel-smoke-new/install.sh /tmp/keel-smoke-proj --ref v3.11.0
+     --with-anchor`（模板来自 v3.11.0 tag），rc 0：
+     `✅ 升级完成：3.8.0 → 3.11.0（内核覆盖 27 · 新增 0 · 保留 47）`，
+     终态校验 5 项通过，升级后 lint 0 fail。
+  3. 验收：`keel-version: 3.11.0`，`keel-lint` 通过（1s），锚点已写入。
+     备份 `3.8.0-to-3.11.0-20261104-014437` 保留可回滚。

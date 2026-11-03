@@ -27,13 +27,13 @@ keywords: [验证清单, SKIP, 矩阵, 3.6.1]
 
 ## 实测
 
-- 全量 verify：98 通过 / 0 失败 / 1 跳过（未验证），约 8 分 37 秒（test-upgrade 393s）；
-  跳过项 = test-lint 用例 44（大小写不敏感卷无法构造；Windows 行为仍未验证）
+- 全量 verify：98/0/1（未验证），8 分 37 秒；跳过 = test-lint 用例 44（Windows 未验证）
 - test-faults：① 7/0/0；② no-binary 0/0/7 跳过；③ no-daemon 0/0/7 跳过（严格模式 rc 1）
 - 矩阵：串行 170s（3.6.1 +57s）；`KEEL_MATRIX_JOBS=4` 68s，7/0/0
 - 文案负控：伪造 1 例 SKIP 清单 + 说明写 0 跳过 → 判死
 - 排障：首次全量 68/30 是 manifest 哈希未重算；`--check-manifest` 定位，重算后 98/0/1
 - 解析器曾把 test-lint 打印的 SKIP 吞成 0 跳过，已修并重跑
+- 发布：v3.11.0 已推（tag peeled 4016ed4）；冒烟 v3.8.0→3.11.0，覆盖 27 / 保留 47
 
 ## 下一步
 
