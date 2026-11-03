@@ -3,46 +3,47 @@ scope: now
 status: active
 last-verified: 2026-11-03
 updated: 2026-11-03
-keywords: [焦点, 两阶段引导, 跨版本矩阵, 升级引擎, 回归, EROFS]
+keywords: [验证清单, SKIP, 矩阵, 3.6.1]
 ---
 
 # NOW · main
 
 ## 当前焦点
 
-**第十二轮：两阶段引导（判据交给目标版本引擎）+ 跨版本升级矩阵；发 v3.10.0。**
-第十一轮的写路径 / 故障覆盖见
-[history](NOW-history/2026-11-03-write-path-and-faults.md)。
+**第十三轮：验证诚实性机制化（test-faults 三环境、矩阵补 3.6.1、verify-report 进发布链路）；发 v3.11.0。**
+第十二轮见 [history](NOW-history/2026-11-03-bootstrap-and-matrix.md)。
 
 ## 本轮进度
 
-- [x] `keel-upgrade.sh` 两阶段引导：模板取到并校验（版本 / manifest / sha256 / 权限）后，
-      自身与模板引擎字节不同即以子进程交给**目标版本引擎**执行；`KEEL_UPGRADE_BOOTSTRAPPED=1`
-      防递归；交接标记 `.keel-bootstrap.pending`；校验失败 `exit 2`、目标零改动
-- [x] `install.sh` 升级分支走同一条交接（含 ≤3.5.0 无引擎者），退出码 3–5 原样透传
-- [x] `test-upgrade` 24 例：引导搬运 / 自身替换 / 模板语法坏拒绝交接 / rc 透传 / dry-run 零改动
-- [x] 新增 `checks/matrix/`：3.7.4 / 3.8.0 / 3.9.0 / current + 3.4.11(install) + REG-1 六格；
-      判据含无假失败、内核逐字节、自定义哈希、门禁、终态五项、续跑、回滚
-- [x] 快照按 git tag + 缓存，`KEEL_MATRIX_VERSIONS` 可配置；离线/缺 tag 整格 SKIP 并单列「未验证」
-- [x] test-faults EROFS 能力探测：无 `SYS_ADMIN` → SKIP 原因 + 未验证计数（实测 6/0/1）
-- [x] 记录：`keel/archive/upgrade-handoff-and-matrix-2026-11-03.md`
+- [x] test-faults 五态环境探测（ok/disabled/no-binary/no-daemon/non-linux），SKIP 带原因，
+      汇总单列「N 跳过（未验证）」；默认跳过 `exit 0`，`KEEL_FAULTS_REQUIRE_DOCKER=1` 才红；
+      6 条判死自检（伪 PASS / FAIL 行 / LINT≠0 / 跳过策略）
+- [x] 矩阵默认格补 3.6.1；旧引擎无 pending/钩子时按能力探测改走 `install.sh` 引导验续跑/回滚
+- [x] 修复恢复缺口：`install.sh` 检测 `.keel-upgrade.pending` 后交给新引擎 `--resume`
+- [x] 新增 `checks/verify/`：`verify-report.json`（套件/结果/跳过原因/用例数/耗时/环境/矩阵格）
+      + `check-verify-report.py` 判据（8 样例自检）
+- [x] `release.sh` 推送前跑清单、打印发行说明一节、校验 CHANGELOG 当前小节
+- [x] 记录：`keel/archive/verify-honesty-2026-11-03.md`
 
 ## 实测
 
-- macOS：test-lint 50/50（13.7s）· test-upgrade 24/24（5:51）· test-faults 7/0/0（32.8s）
-  · 矩阵 6/0/0（1:53）· lint 两仓 0 fail · manifest 72 行
-- Debian 12 双 locale（C / zh_CN.UTF-8）：test-lint 50/50 · test-upgrade 24/24 · lint 0 fail
-  · manifest 72 行；容器内矩阵 6/0/0（约 30s）
-- 冒烟：v3.8.0 真装 → 新 install.sh 升 3.10.0，rc=0、五项终态过（86s），不误判
+- 全量 verify：98 通过 / 0 失败 / 1 跳过（未验证），约 8 分 37 秒（test-upgrade 393s）；
+  跳过项 = test-lint 用例 44（大小写不敏感卷无法构造；Windows 行为仍未验证）
+- test-faults：① 7/0/0；② no-binary 0/0/7 跳过；③ no-daemon 0/0/7 跳过（严格模式 rc 1）
+- 矩阵：串行 170s（3.6.1 +57s）；`KEEL_MATRIX_JOBS=4` 68s，7/0/0
+- 文案负控：伪造 1 例 SKIP 清单 + 说明写 0 跳过 → 判死
+- 排障：首次全量 68/30 是 manifest 哈希未重算；`--check-manifest` 定位，重算后 98/0/1
+- 解析器曾把 test-lint 打印的 SKIP 吞成 0 跳过，已修并重跑
 
 ## 下一步
 
-1. Windows / Git Bash 运行时（仍未验证）
-2. 找第二个采用方样本，拆掉「单样本」边界
-3. test-faults 在无 Docker 环境下的降级行为（当前是不可用即失败）
+1. 无 Docker 环境复跑真实故障注入（当前只验证 SKIP 语义）
+2. 矩阵补 3.5.x / 3.10.x；第二个采用方样本
+3. Windows / Git Bash 运行时
 
 ## 阻塞
 
 | 卡在 | 解锁条件 | 绕行 |
 |---|---|---|
-| Windows 运行时未验证 | 一台可跑 bash 的 Windows（VM / 云 / Actions 写权限） | 静态守卫 + 文档三档结论，不宣称支持 |
+| Windows 运行时未验证 | 可跑 bash 的 Windows | 静态守卫 + 文档三档结论 |
+| 无 Docker 真故障未跑 | 可装 Docker 的 Linux / CI | 清单与发行说明显式记 SKIP（未验证） |

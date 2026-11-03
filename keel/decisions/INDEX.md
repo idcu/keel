@@ -1,7 +1,7 @@
 ---
 scope: meta
 status: active
-last-verified: 2026-11-02
+last-verified: 2026-11-03
 keywords: [决策, ADR, 索引, 性能, 批量化]
 ---
 

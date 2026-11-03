@@ -1,0 +1,156 @@
+{
+  "schema": 1,
+  "generated_at": "2026-11-04T01:27:03+08:00",
+  "label": "v3.11.0 全量",
+  "environment": {
+    "platform": "darwin",
+    "platform_release": "24.6.0",
+    "python": "3.13.5",
+    "locale": {
+      "LANG": "zh_CN.UTF-8",
+      "LC_ALL": null,
+      "LC_CTYPE": null
+    },
+    "container_image": "python:3.11",
+    "engine_version": "3.11.0",
+    "matrix_jobs": "4"
+  },
+  "suites": [
+    {
+      "name": "claims-selftest",
+      "status": "PASS",
+      "skip_reason": null,
+      "cases": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "duration_s": 0.0
+    },
+    {
+      "name": "lint",
+      "status": "PASS",
+      "skip_reason": null,
+      "cases": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration_s": 1.6
+    },
+    {
+      "name": "manifest",
+      "status": "PASS",
+      "skip_reason": null,
+      "cases": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration_s": 1.7
+    },
+    {
+      "name": "test-lint",
+      "status": "SKIP",
+      "skip_reason": "[SKIP] 44 文件名仅大小写不同（Windows 不区分大小写会互相覆盖）             §9.1-18",
+      "cases": 51,
+      "passed": 50,
+      "failed": 0,
+      "skipped": 1,
+      "duration_s": 16.0
+    },
+    {
+      "name": "test-upgrade",
+      "status": "PASS",
+      "skip_reason": null,
+      "cases": 24,
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0,
+      "duration_s": 393.1
+    },
+    {
+      "name": "test-faults",
+      "status": "PASS",
+      "skip_reason": null,
+      "cases": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "duration_s": 32.5
+    },
+    {
+      "name": "matrix",
+      "status": "PASS",
+      "skip_reason": null,
+      "cases": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "duration_s": 72.3,
+      "cells": [
+        {
+          "cell": "3.6.1",
+          "status": "PASS"
+        },
+        {
+          "cell": "3.7.4",
+          "status": "PASS"
+        },
+        {
+          "cell": "3.8.0",
+          "status": "PASS"
+        },
+        {
+          "cell": "3.9.0",
+          "status": "PASS"
+        },
+        {
+          "cell": "current",
+          "status": "PASS"
+        },
+        {
+          "cell": "3.4.11",
+          "status": "PASS"
+        },
+        {
+          "cell": "REG-1",
+          "status": "PASS"
+        }
+      ]
+    }
+  ],
+  "matrix_cells": [
+    {
+      "cell": "3.6.1",
+      "status": "PASS"
+    },
+    {
+      "cell": "3.7.4",
+      "status": "PASS"
+    },
+    {
+      "cell": "3.8.0",
+      "status": "PASS"
+    },
+    {
+      "cell": "3.9.0",
+      "status": "PASS"
+    },
+    {
+      "cell": "current",
+      "status": "PASS"
+    },
+    {
+      "cell": "3.4.11",
+      "status": "PASS"
+    },
+    {
+      "cell": "REG-1",
+      "status": "PASS"
+    }
+  ],
+  "summary": {
+    "passed": 98,
+    "failed": 0,
+    "skipped": 1,
+    "verified": false
+  }
+}
