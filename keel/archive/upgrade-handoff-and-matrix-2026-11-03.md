@@ -93,6 +93,33 @@ exit=0
 2. **git archive 快照权限漂移**：git 默认 `tar.umask=0002`，解出的文件是 664/775，
    与 manifest 的 644/755 不符；矩阵取快照时加 `-c tar.umask=0022`。
 
+## 发布后跨版本冒烟（v3.8.0 → v3.10.0）
+
+空目录真装 v3.8.0，加自建文件（`NOW.md` 段落 + `decisions/0099-smoke.txt`），
+再用 v3.10.0 的 `install.sh` 升级：
+
+```bash
+bash <(curl -fsSL .../raw/v3.8.0/install.sh) . --ref v3.8.0 --with-anchor
+bash <(curl -fsSL .../raw/v3.10.0/install.sh) . --ref v3.10.0 --with-anchor
+```
+
+| 项 | 结果 |
+|---|---|
+| 升级 | rc=0 · 86s · `keel-upgrade · 目标=… 3.8.0 → 3.10.0 模式=apply` |
+| 终态 | 版本 / 断点终态 / 备份可回滚 / manifest / 临时文件 5 项全过 |
+| 输出 | `✅ 升级完成：3.8.0 → 3.10.0（内核覆盖 24 · 新增 0 · 保留 47）` |
+| 自定义 | `NOW.md`、`decisions/0099-smoke.txt` 哈希逐字节不变 |
+| 残留 | 无 `.keel-upgrade.pending` / `.keel-bootstrap.pending` |
+| 备份 | `3.8.0-to-3.10.0-…/keel/INDEX.md` = 3.8.0，含 `restore.sh` |
+| 升级后 | manifest 72 行一致 · lint 0 fail |
+
+说明：旧版仓库里没有新引擎，因此实际执行者是新 `install.sh` 拿到的**模板引擎**
+（输出首行即目标版本引擎的标识）。旧引擎原地直跑（不推荐）仍可用，但判据由旧引擎做，
+这正是 QUICKSTART 要求「升级请走 install.sh / 新引擎」的原因。
+
+另外记一条环境噪声：冒烟目录不是 git 仓库，install.sh 第 4 步会打印
+`❌ 不是 git 仓库` 并提示钩子未装——预期行为，不影响升级结果。
+
 ## 未覆盖
 
 - Windows / Git Bash 本轮未跑（历史归档已记，仍未验证）。
