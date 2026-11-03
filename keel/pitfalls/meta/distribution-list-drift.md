@@ -2,7 +2,7 @@
 scope: meta
 status: active
 severity: P1
-last-verified: 2026-11-02
+last-verified: 2026-11-03
 triggers: 1
 keywords: [分发, 升级, manifest, 权限, 引擎缺失, 静默]
 ---

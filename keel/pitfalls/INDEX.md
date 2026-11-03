@@ -1,7 +1,7 @@
 ---
 scope: meta
 status: active
-last-verified: 2026-11-02
+last-verified: 2026-11-03
 keywords: [坑库, 索引, shell, 性能, 批量化]
 ---
 
@@ -29,4 +29,5 @@ keywords: [坑库, 索引, shell, 性能, 批量化]
 | macOS awk误报孤儿丢末件 | meta | P0 | [awk-gawk-gaps](meta/awk-gawk-gaps.md) |
 | bash3 UTF-8吞字节/glob误判(蒸馏) | meta | P1 | [bash3-utf8-varname-eats-byte](meta/bash3-utf8-varname-eats-byte.md) |
 | 升级漏文件且无检查会报 | meta | P1 | [distribution-list-drift](meta/distribution-list-drift.md) |
-| 升级磁盘满假成功 | meta | P0 | [upgrade-silent-write-failure](meta/upgrade-silent-write-failure.md) |
+| 升级磁盘满假成功(蒸馏) | meta | P0 | [upgrade-silent-write-failure](archive/upgrade-silent-write-failure.md) |
+| 清单吞打印SKIP | meta | P1 | [report-parser-swallows-skip](meta/report-parser-swallows-skip.md) |

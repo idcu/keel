@@ -69,7 +69,7 @@ KEEL_FAULT_IMAGE=idcu-go-devbox:latest python3 keel/checks/test-faults.py
 | 2 | kernel / additive 分支 `cp` 与 merge 分支 `sed -i` 的退出码没人看：ENOSPC 留下截断文件、把**残片哈希**记进 pending；直接覆盖 `keel-upgrade.sh` 自身时，正在执行的脚本被截成 0 字节，进程仍打印「✅ 升级完成」 | **高** | 一律 temp + `mv` 原子替换（执行中的旧 inode 不被截断）；每个写动作失败即 `die 2` 并提示 `--resume` / `--rollback`；manifest 落盘同样 temp+mv |
 | 3 | temp+mv 的中间文件 `*.keel-new.*` 被 SIGKILL 留在树里（不在清单、会被 lint 看见） | 低 | apply 前统一清理 `find ... -name '*.keel-new.*' -delete` |
 
-新增坑条目 [upgrade-silent-write-failure](../pitfalls/meta/upgrade-silent-write-failure.md)
+新增坑条目 [upgrade-silent-write-failure](../pitfalls/archive/upgrade-silent-write-failure.md)
 （P0，含判死方式）。因坑目录 20 文件已满，按 §7.3 把 `awk-string-vs-number-compare`
 沉到 `pitfalls/archive/`，未放宽 `budget.env`。
 

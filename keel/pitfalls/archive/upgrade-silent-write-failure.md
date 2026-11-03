@@ -1,6 +1,6 @@
 ---
 scope: meta
-status: active
+status: distilled
 severity: P0
 last-verified: 2026-11-03
 triggers: 4
