@@ -3,7 +3,7 @@ scope: meta
 status: active
 severity: P0
 last-verified: 2026-11-03
-triggers: 3
+triggers: 4
 keywords: [升级, 磁盘满, ENOSPC, 静默成功, 原子写, 截断]
 ---
 
