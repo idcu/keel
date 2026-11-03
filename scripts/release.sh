@@ -50,17 +50,28 @@ case "$st" in
   *)  echo "   ✅ 子模块指针一致：$(printf '%s' "$st" | sed -E 's/^[ +-]//' | cut -c1-12)…" ;;
 esac
 
-echo "── 2. 发布仓自检（不通过就不许推）"
+echo "── 2. 完整验证 + 发行说明一致性（不通过就不许推）"
+# 发布说明最容易在「跳过 7 例」时写成「全部通过」。验证清单落成 JSON 后，
+# 由 check-verify-report.py 对照 CHANGELOG 当前版本一节：清单含 SKIP/FAIL 时
+# 出现「全部通过 / 全绿」即 die。判据自检（--selftest）随清单一起跑，防止
+# 判据本身腐烂成永远绿的装饰。
 if [ "$APPLY" -eq 1 ]; then
-  ( cd "$SUB" && bash keel/checks/keel-upgrade.sh --check-manifest keel ) || die "发布仓 manifest 与实际文件不一致（跑 --regen-manifest 重算）"
-  ( cd "$SUB" && bash keel/checks/test-lint.sh ) || die "发布仓自测未通过"
-  ( cd "$SUB" && bash keel/checks/test-upgrade.sh ) || die "发布仓升级引擎自测未通过"
-  ( cd "$SUB" && bash keel/checks/keel-lint.sh keel ) || die "发布仓 keel-lint 未通过"
+  VERIFY_JSON=$(mktemp "${TMPDIR:-/tmp}/keel-verify-XXXXXX")
+  # 矩阵各格独立，并行只改调度、不改断言；默认 4 路避免发布自检被串行拖长。
+  export KEEL_MATRIX_JOBS="${KEEL_MATRIX_JOBS:-4}"
+  ( cd "$SUB" && bash keel/checks/verify/verify.sh --out "$VERIFY_JSON" \
+      --label "release $(git -C "$SUB" rev-parse --short HEAD)" ) \
+    || die "完整验证有 FAIL（见上方清单；不允许带着失败发布）"
+  python3 "$SUB/keel/checks/verify/check-verify-report.py" \
+    --report "$VERIFY_JSON" --claims "$SUB/CHANGELOG.md" \
+    || die "发行说明与验证清单不一致（清单含 SKIP/FAIL 时不得写「全部通过 / 全绿」）"
+  echo "── 发行说明 · 验证状况"
+  python3 "$SUB/keel/checks/verify/check-verify-report.py" --report "$VERIFY_JSON" --summary
+  rm -f "$VERIFY_JSON"
 else
-  echo "   [dry-run] (cd keel-starter && bash keel/checks/keel-upgrade.sh --check-manifest keel)"
-  echo "   [dry-run] (cd keel-starter && bash keel/checks/test-lint.sh)"
-  echo "   [dry-run] (cd keel-starter && bash keel/checks/test-upgrade.sh)"
-  echo "   [dry-run] (cd keel-starter && bash keel/checks/keel-lint.sh keel)"
+  echo "   [dry-run] (cd keel-starter && bash keel/checks/verify/verify.sh --out /tmp/keel-verify.json)"
+  echo "   [dry-run] python3 keel-starter/keel/checks/verify/check-verify-report.py --report … --claims keel-starter/CHANGELOG.md"
+  echo "   [dry-run] python3 keel-starter/keel/checks/verify/check-verify-report.py --report … --summary"
 fi
 
 echo "── 3. 推送（§12.3 硬约束：① 发布仓 → ② 项目仓）"
