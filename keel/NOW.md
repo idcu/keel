@@ -3,39 +3,43 @@ scope: now
 status: active
 last-verified: 2026-11-03
 updated: 2026-11-03
-keywords: [焦点, 写路径, atomic_write, 终态校验, EROFS, 配额, 断网]
+keywords: [焦点, 两阶段引导, 跨版本矩阵, 升级引擎, 回归, EROFS]
 ---
 
 # NOW · main
 
 ## 当前焦点
 
-**第十一轮：「写失败却报成功」机制化 + 四类故障收官；发 v3.9.0 → 冒烟后发 v3.9.1。**
-第十轮的 Windows / 真实故障见
-[history](NOW-history/2026-11-03-windows-and-real-faults.md)。
+**第十二轮：两阶段引导（判据交给目标版本引擎）+ 跨版本升级矩阵；发 v3.10.0。**
+第十一轮的写路径 / 故障覆盖见
+[history](NOW-history/2026-11-03-write-path-and-faults.md)。
 
 ## 本轮进度
 
-- [x] 升级引擎收敛为单一写路径：`atomic_write`（temp → sync → 读回哈希 → rename → die）
-      + `record_file` 写后复核；kernel / additive / merge / manifest / pending / restore.sh 全走它
-- [x] `final_verify`：版本 / pending 清除 / 备份可回滚 / manifest 一致 / 无临时残留，5 项全过
-      才允许打印「✅ 升级完成」
-- [x] lint 第 16 段（§9.1-19）静态判据：裸 `cp`/`mv`/`install`、`sed -i`、重定向写 `$TARGET`；
-      核心区间 + `# keel-write:ok` + heredoc 三类豁免
-- [x] test-lint 用例 45–48（各配判死断言）：口径 46/46 → **50/50**
-- [x] test-faults 新增 gate 满 / EROFS（preflight + apply 中途）/ 配额部分写入 / 半断网：
-      3 → **7 例**
-- [x] 记录：`keel/archive/real-faults-round2-2026-11-03.md`
-- [x] 发布 v3.9.0 后做真实冒烟（`install.sh --ref` + v3.8.0 升级中断 + `--resume`），
-      照出 4 条缺陷（备份须含 restore.sh 的误判 / 先清 pending 后校验 / 续跑 `from` 被改写 /
-      备份目录同秒撞名）→ v3.9.1 全修，正好也是 test-faults 偶发 6/7 的根因
+- [x] `keel-upgrade.sh` 两阶段引导：模板取到并校验（版本 / manifest / sha256 / 权限）后，
+      自身与模板引擎字节不同即以子进程交给**目标版本引擎**执行；`KEEL_UPGRADE_BOOTSTRAPPED=1`
+      防递归；交接标记 `.keel-bootstrap.pending`；校验失败 `exit 2`、目标零改动
+- [x] `install.sh` 升级分支走同一条交接（含 ≤3.5.0 无引擎者），退出码 3–5 原样透传
+- [x] `test-upgrade` 24 例：引导搬运 / 自身替换 / 模板语法坏拒绝交接 / rc 透传 / dry-run 零改动
+- [x] 新增 `checks/matrix/`：3.7.4 / 3.8.0 / 3.9.0 / current + 3.4.11(install) + REG-1 六格；
+      判据含无假失败、内核逐字节、自定义哈希、门禁、终态五项、续跑、回滚
+- [x] 快照按 git tag + 缓存，`KEEL_MATRIX_VERSIONS` 可配置；离线/缺 tag 整格 SKIP 并单列「未验证」
+- [x] test-faults EROFS 能力探测：无 `SYS_ADMIN` → SKIP 原因 + 未验证计数（实测 6/0/1）
+- [x] 记录：`keel/archive/upgrade-handoff-and-matrix-2026-11-03.md`
+
+## 实测
+
+- macOS：test-lint 50/50（13.7s）· test-upgrade 24/24（5:51）· test-faults 7/0/0（32.8s）
+  · 矩阵 6/0/0（1:53）· lint 两仓 0 fail · manifest 72 行
+- Debian 12 双 locale（C / zh_CN.UTF-8）：test-lint 50/50 · test-upgrade 24/24 · lint 0 fail
+  · manifest 72 行；容器内矩阵 6/0/0（约 30s）
 
 ## 下一步
 
-1. 有 Windows 运行时后：跑 test-lint / test-upgrade / install + 升级 + `--resume` 端到端
-2. 找第二个采用方样本，拆掉「单样本」边界
-3. test-faults 的 EROFS 依赖 `--cap-add SYS_ADMIN`：无该能力的 CI 上会失败而非 SKIP，
-   需要时再补能力探测
+1. **发布后冒烟（本轮验收条件）**：v3.8.0 真实安装 → 升 v3.10.0，确认不再误判失败
+2. Windows / Git Bash 运行时（仍未验证）
+3. 找第二个采用方样本，拆掉「单样本」边界
+4. test-faults 在无 Docker 环境下的降级行为（当前是不可用即失败）
 
 ## 阻塞
 
