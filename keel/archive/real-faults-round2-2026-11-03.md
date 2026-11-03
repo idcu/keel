@@ -39,17 +39,18 @@ docker exec -e LC_ALL=C|zh_CN.UTF-8 keel-gnu-12 bash -c 'cd /src && bash keel/ch
 | **配额·部分写入** | tmpfs 留 备份+12K（45KB 文件写不完） | rc=2；**未入 pending 的文件哈希与升级前逐一相同**（目标文件未被截断）；无 `*.keel-new.*`；续跑后 `diff -r` 相等 | PASS |
 | **拉到一半断网** | git daemon + 慢速 TCP 代理，2s 掐断 shallow clone | rc=2「拉取模板失败」；无 pending/备份/半成品目录；树未改；同环境 `--from` 成功 | PASS |
 
-耗时（宿主）：`test-faults` **7/7，31.2s**；`test-lint` **50/50，31.6s**；`keel-lint` 4.1s；
-`test-upgrade` **19/19，378.7s**（同机负载偏高，此前同套件 148s）。
-glibc 容器：`test-lint` 50/50（C 9.2s / zh_CN 10.0s）；`test-upgrade` 19/19 两 locale 均通过；
+耗时（宿主，v3.9.1 复跑）：`test-faults` **7/7，连跑三次 32.4 / 33.6 / 32.8s**；
+`test-lint` **50/50，15.9s**；`keel-lint` 2s；`test-upgrade` **19/19，约 298s**（08:38:22→08:43:20 墙钟）。
+（v3.9.0 时代同机负载偏高时曾测到 test-faults 31.2s、test-lint 31.6s、test-upgrade 378.7s。）
+glibc 容器（v3.9.1 复跑）：`test-lint` 50/50（C 5.2s / zh_CN 5.6s）；`test-upgrade` 19/19 两 locale 均通过；
 `keel-lint` 与 `--check-manifest` 两 locale 均 0。
 
 ## 机制化判据（同轮，v3.9.0）
 
 - `atomic_write`：tmp → `sync` → 读回 sha256 → `mv` → 失败 `die 2`；目标文件在
   ENOSPC / EROFS 下**从未被截断**（写坏的只是 tmp）。
-- `final_verify`：版本 / pending 清除 / 备份含 restore.sh / manifest 一致 / 无临时残留，
-  5 项全过才允许打印「✅ 升级完成」。
+- `final_verify`：版本 == `--to` / pending `stage=done` / 备份树版本 == pending 的 `from` /
+  manifest 一致 / 无 `*.keel-new.*` 残留，5 项全过才允许打印「✅ 升级完成」。
 - lint §9.1-19（第 16 段）：裸 `cp`/`mv`/`install`、`sed -i`、重定向写 `$TARGET` → fail；
   豁免 `# >>> keel-write-core` 区间、`# keel-write:ok`、heredoc 数据体。
 
@@ -60,6 +61,18 @@ glibc 容器：`test-lint` 50/50（C 9.2s / zh_CN 10.0s）；`test-upgrade` 19/1
    修法：sed 先落临时文件，再 `atomic_write < tmp`；每轮循环清空 `AW_HASH`。
 2. **成功打印早于终态校验**（重构前）：gate 通过即打印成功，未复核版本/pending/manifest。
 3. **restore.sh 在 apply 之后写**：盘满时写不进去却仍打印"已完成"→ 已提前到备份阶段生成。
+
+### v3.9.1：发布后冒烟才照出的 4 条
+
+4. **`final_verify` 要求备份含 `restore.sh`**：v3.8.0 的旧引擎备份里没有它，于是全量升级用户
+   被误判失败。修法：改为「备份树 `INDEX.md` 版本 == pending 的 `from`」，不再依赖某代产物。
+5. **先 `rm pending` 后校验**：3.9.0 的顺序让校验失败时已无断点可续。修法：
+   `pending_write done → final_verify → rm pending → 复核 → 打印`。
+6. **续跑时 `from` 被改写**：`--resume` 时 `CUR` 已是目标版本，`pending_write` 写入
+   `from=$CUR`，备份版本比对必然不符。修法：从 pending 读 `FROM_V` 并沿用。
+7. **备份目录同秒撞名**：备份失败后立刻 `--resume`，`date` 精确到秒 → 同名目录已存在，
+   `cp -pR src dst` 复制成 `dst/keel` 嵌套一层，终态校验读不到备份版本（`<空>`）。
+   修法：目录名冲突时追加 `-1/-2…` 后缀。这也是 test-faults 偶发 6/7 的唯一根因。
 
 ## 未覆盖项
 

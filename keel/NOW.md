@@ -10,7 +10,7 @@ keywords: [焦点, 写路径, atomic_write, 终态校验, EROFS, 配额, 断网]
 
 ## 当前焦点
 
-**第十一轮：「写失败却报成功」机制化 + 四类故障收官；发 v3.9.0。**
+**第十一轮：「写失败却报成功」机制化 + 四类故障收官；发 v3.9.0 → 冒烟后发 v3.9.1。**
 第十轮的 Windows / 真实故障见
 [history](NOW-history/2026-11-03-windows-and-real-faults.md)。
 
@@ -26,6 +26,9 @@ keywords: [焦点, 写路径, atomic_write, 终态校验, EROFS, 配额, 断网]
 - [x] test-faults 新增 gate 满 / EROFS（preflight + apply 中途）/ 配额部分写入 / 半断网：
       3 → **7 例**
 - [x] 记录：`keel/archive/real-faults-round2-2026-11-03.md`
+- [x] 发布 v3.9.0 后做真实冒烟（`install.sh --ref` + v3.8.0 升级中断 + `--resume`），
+      照出 4 条缺陷（备份须含 restore.sh 的误判 / 先清 pending 后校验 / 续跑 `from` 被改写 /
+      备份目录同秒撞名）→ v3.9.1 全修，正好也是 test-faults 偶发 6/7 的根因
 
 ## 下一步
 

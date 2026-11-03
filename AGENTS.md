@@ -38,7 +38,7 @@
 
 ```bash
 bash keel/checks/keel-lint.sh keel      # 一致性校验：0 fail 才放行
-bash keel/checks/test-lint.sh           # lint 自测：44/44（42 用例 + 2 元检查）
+bash keel/checks/test-lint.sh           # lint 自测：50/50（48 用例 + 2 元检查）
 ```
 
 > 前置：每个新 clone 跑一次 `bash keel/checks/install-hooks.sh`（`core.hooksPath`
