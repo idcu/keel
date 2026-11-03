@@ -115,7 +115,7 @@ python3 keel/checks/verify/check-verify-report.py --report verify-report.json --
 
 ```bash
 KEEL_MATRIX_JOBS=4 bash keel/checks/verify/verify.sh \
-  --out /tmp/vr-final2.json --label "v3.11.0 全量"
+  --out /tmp/vr-final4.json --label "v3.11.0 全量"
 ```
 
 | 套件 | 用例数 | 结果 | 耗时 |
