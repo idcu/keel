@@ -3,7 +3,7 @@ scope: meta
 status: active
 severity: P1
 last-verified: 2026-11-04
-triggers: 1
+triggers: 2
 keywords: [清单, SKIP, 解析器, 伪装PASS, 验证, 诚实]
 ---
 
