@@ -75,3 +75,6 @@ superseded-by:
   SKIP，而摘要若不显示原因，页面上就只剩绿色——**缺能力被读成通过**。
 - 判据边界：CI 摘要只是"可见"，不改变退出码；跳过是否放行仍由
   `KEEL_FAULTS_REQUIRE_DOCKER=1` / 矩阵格自身决定。可见性 ≠ 门禁强度。
+- v3.14.0：清单自身也要绑定到代码——provenance（commit / dirty / 4 文件 sha256）
+  与 `--repo` 校验见 ADR 0002 的对应修订；本条不重复。
+

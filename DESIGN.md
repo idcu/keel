@@ -1747,7 +1747,7 @@ bash keel/checks/check-mcp-config.sh        # 恒 exit 0：未接入不算缺陷
 | ① 工具侧规则（§4 锚点） | 每次任务开始 | AI 按协议读取与写回；**锚点存在性与原文一致性由 lint 检查**（§9.1-10） |
 | ② pre-commit | `keel/` 下 md 有变更时 | `bash keel/checks/keel-lint.sh keel`，0 fail 才放行 |
 | ③ commit-msg | 每次提交 | 扫描 message 里的 `pitfall: <文件名>`，自动给对应条目 `triggers` +1 并 stage（§7.4） |
-| ④ CI | push / PR | lint 必须 0 fail；**自测必须 50/50**（`bash keel/checks/test-lint.sh`，§9.3）；钩子本体与可执行位由 lint 第 16 项守（§9.1）；PR 模板含"写回确认"勾选项 |
+| ④ CI | push / PR | lint 必须 0 fail；**自测必须 53/53**（`bash keel/checks/test-lint.sh`，§9.3）；钩子本体与可执行位由 lint 第 16 项守（§9.1）；PR 模板含"写回确认"勾选项 |
 | 兜底 | —— | `NOW.updated` 超 7 天 → lint ⚠️（提示会话可能未写回） |
 
 **【铁律】①②③④ 缺一，强制闭环就不成立。** 钩子由 `keel-starter` 的 `checks/install-hooks.sh` 落地（§12.1）——**只在文档里写钩子、不安装钩子，等于没有钩子**；v2 的"铁律"与 MVP 五件套自相矛盾（MVP 里既没有钩子也没有 CI），v3 已把四件事一起并入 MVP。
@@ -1899,7 +1899,7 @@ keel/
 └── checks/                  # keel-lint.sh + budget.env + rules.md + test-lint.sh/.py
 │                            # + install-hooks.sh + verify-hooks.sh + hooks/{pre-commit, commit-msg}
 ＋ archive/.gitkeep · NOW-history/.gitkeep   # 空目录不被 git 跟踪（§3.3 规则 5）
-＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 50/50（§10.4 之四）
+＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 53/53（§10.4 之四）
 ＋ PR 模板（.github/pull_request_template.md）——"写回确认"勾选项（§10.4 之四）
 ＋ 工具侧锚点 1 句（AGENTS.md 首行）——没有它，上面这些文件不会被读到（§10.4 之一）
 ＋ checks/keel-doctor.sh —— 装完一键自证（v3.4.5）
@@ -1917,7 +1917,7 @@ keel/
 2. 装钩子：`bash keel/checks/install-hooks.sh`（pre-commit + commit-msg）；
 3. 贴 CI 片段，并在项目根写入 §4.1 锚点；
 4. 跑 `bash keel/checks/keel-lint.sh keel`——**第一次自检必须 0 fail**（锚点也在检查范围内，§9.1-10）；
-5. 跑 `bash keel/checks/test-lint.sh`——**必须 50/50**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
+5. 跑 `bash keel/checks/test-lint.sh`——**必须 53/53**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
 
 **按需层（不进 MVP，痛点到了再加）**——starter 已带骨架，规格见 §5.7，"怎么填"写在同目录的 `_template*` 里：
 
@@ -2069,6 +2069,31 @@ bash scripts/release.sh --apply    # ① 发布仓 push → ② 项目仓 push�
 - **账本不是成绩单**：覆盖率只证明「存在一个能触发它的用例」，不证明用例本身有效——后者是变异测试，不在本账本承诺内。
 
 判据（缺一即 FAIL）：三档之和 = 判据总数；`negative` 必须 `negative_cases>0`；`positive_only` 必须有用例且负例为 0；`none` 必须 `cases==0`；`checks_ledger` 缺失即 FAIL。
+
+**分母扩到元检查（v3.14.0）**：
+
+v3.13.0 的分母只有 §9.1 的 19 条——`DOC` / `LOCALE` / `PROSE` 三个元检查失败只计 `bad`、不进分母，等于「检查会红，但覆盖率看不见它」。更糟的是它们只跑干净输入，从没有反例。v3.14.0 改为：
+
+- 三个元检查各自获得一条**判死用例**（坏脚本副本 / 泄漏赋值 / 旧版本 README），登记在 `test-lint.py` 的 `META_CASES`；`§9.3-BUDGET`（预算真源缺失）因已有用例 20 判死，获得正式编号。
+- 同时打印**两个口径**，禁止只报一个好看的百分比：
+  `22/23（含元检查与预算检查）`、`21/22（含元检查）`、`18/19（仅 §9.1）`。
+  三个百分比同时出现；分母扩大后数字有升有降，读者自行判断，不许只留更好看的那个。
+- **给不了判死用例就不给编号**：§9.1-15 仍是扩展位、仍 `coverage=0`，不补机器判据——
+  造一条「看起来有检查」的假判据比不检查更危险。
+
+**清单位置绑定 provenance（v3.14.0）**：
+
+`verify-report.json` 增 `provenance`：生成清单时的 `commit`、`dirty` / `dirty_files`、
+四个判据文件（`checks/keel-lint.sh` / `checks/test-lint.py` /
+`checks/verify/checks-ledger.py` / `checks/verify/verify.py`）的 `sha256`、
+平台、locale、`generated_at`。`release.sh` 调 `check-verify-report.py --repo <发布仓>`
+校验：commit 必须等于即将推送的 HEAD，工作区必须与清单声明一致，四个文件 sha256 必须未变。
+「commit 不一致」「自称干净却有未提交文件」「sha256 已变」三种情况都判死。
+
+诚实边界：这只证明**清单与代码自洽**（清单不是从别处搬来的）。它**不是**防篡改——
+任何人都能伪造一份自洽的清单；没有外部核对（如 CI 二次构建、独立签名）时不上升为「可信」。
+四文件从此进入该绑定的检查面：改其中任一文件而不同步清单，发布链路会拦。
+
 
 **两站镜像（Gitee 主 + GitHub 镜像）**：
 

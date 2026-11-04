@@ -63,10 +63,19 @@ if [ "$APPLY" -eq 1 ]; then
       --label "release $(git -C "$SUB" rev-parse --short HEAD)" ) \
     || die "完整验证有 FAIL（见上方清单；不允许带着失败发布）"
   python3 "$SUB/keel/checks/verify/check-verify-report.py" \
-    --report "$VERIFY_JSON" --claims "$SUB/CHANGELOG.md" \
-    || die "发行说明与验证清单不一致（清单含 SKIP/FAIL 时不得写「全部通过 / 全绿」）"
+    --report "$VERIFY_JSON" --claims "$SUB/CHANGELOG.md" --repo "$SUB" \
+    || die "发行说明与验证清单不一致，或清单 provenance 与当前发布仓不一致（旧清单冒充新证据）"
   echo "── 发行说明 · 验证状况"
   python3 "$SUB/keel/checks/verify/check-verify-report.py" --report "$VERIFY_JSON" --summary
+  echo "── 清单绑定 · provenance"
+  python3 - "$VERIFY_JSON" "$SUB" <<'PY' || exit 1
+import json, sys
+rep = json.load(open(sys.argv[1], encoding="utf-8"))
+p = rep["provenance"]
+print("   commit %s · dirty %d 个文件 · 4 个判据文件 sha256 已记录"
+      % ((p["commit"] or "未知")[:12], p["dirty_files"]))
+print("   ⚠️ 只证明清单与代码自洽；没有外部核对时不是「可信」")
+PY
   rm -f "$VERIFY_JSON"
 else
   echo "   [dry-run] (cd keel-starter && bash keel/checks/verify/verify.sh --out /tmp/keel-verify.json)"

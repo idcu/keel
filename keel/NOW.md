@@ -3,40 +3,39 @@ scope: now
 status: active
 last-verified: 2026-11-04
 updated: 2026-11-04
-keywords: [判据, 覆盖率, 账本, 3.13.0]
+keywords: [判据, 覆盖率, 元检查, provenance, 3.14.0]
 ---
 
 # NOW · main
 
 ## 当前焦点
 
-**第十五轮：判据覆盖率账本（快赢 2）落地；发 v3.13.0。**
-第十四轮（矩阵补两格 + 复评）见 git 历史。
+**第十六轮：分母扩到元检查（L1）+ 清单绑定 provenance（L2）；发 v3.14.0。**
+第十五轮（判据覆盖率账本）见 git 历史。
 
 ## 本轮进度
 
-- [x] 新增 `checks/verify/checks-ledger.py`：§9.1 的 19 条判据单一登记；
-      覆盖状态从 `test-lint.py` 的 `CASES` 自动推导，不维护第二份手写表
-- [x] `verify-report.json` 增 `checks_ledger`；`check-verify-report.py` 增 3 个判死样例（8 → 11）
-- [x] 账本自检 7 例，含「删掉 §9.1-19 的 4 条用例 → coverage 变 none」反向验证
-- [x] 两仓内核同步 + manifest 新增 kernel 行；DESIGN §12.3、ADR 0002 修订
+- [x] `test-lint.py` 增 `META_CASES`：DOC / LOCALE / PROSE 各一条判死用例；
+      自测分母 50 → 53（48 用例 + 3 元检查用例 + 2 元检查）
+- [x] 账本分母 19 → 22（含元检查）→ 23（含 §9.3-BUDGET）；三口径同屏打印
+- [x] `§9.3-BUDGET` 给正式编号（用例 20 已判死）；`§9.1-15` 仍不给——
+      给不了判死用例就不登记
+- [x] `verify-report.json` 增 `provenance`（commit / dirty / 4 文件 sha256 /
+      平台 / locale / 时间）；`release.sh` 用 `--repo` 校验，三种不一致都拦
+- [x] `check-verify-report` 自检 11 → 17，含 4 条真 git 仓库负控
 
 ## 实测
 
-- 判据覆盖：**18/19 有负例（94.7%）**；`coverage=0` 仅 §9.1-15（项目扩展位）
-- 单列：§9.3 预算检查 1 条有负例；5 个元检查只有 2 个进 test-lint 自测分母
-- 账本暴露两处散文不一致：DESIGN「39 例 fail」实测 38（已改）；
-  test-lint 自报「2 元检查」实为 5（DOC / LOCALE / PROSE 未进分母）
-- 全量：**109 通过 / 0 失败 / 1 跳过（未验证）**（macOS；跳过 = 用例 44）
-- 首次复跑 `lint` 曾失败但清单只有状态没有原因 → `verify.py` 失败时保留
-  `output_tail`（最后 12 行）；失败必须留证据
-- 发布：v3.13.0（starter 先推 → 项目仓；tag 双向核对；发布后冒烟）
+- 判据覆盖：**22/23（含元检查与预算检查，95.7%）**；含元检查 21/22（95.5%）；
+  仅 §9.1 18/19（94.7%）；`coverage=0` 仍只有 §9.1-15
+- 负控：commit 不符 / 自称干净 / sha256 已变 / 旧清单冒充新证据，全部判死
+- 发布：v3.14.0（先 starter 后项目仓；tag 双向；新 clone 冒烟）
 
 ## 下一步
 
-1. 快赢 1：`verify-report.json` 最小 provenance（commit / dirty / checks_sha256）
-2. 主攻：判据变异测试（19 项 × ≥1 变异体，抓取率 ≥90%）
-3. 外部采用仍为 0：所有「带分母」指标的分母都只是单仓数据
+1. 变异测试：19 项 × ≥1 变异体，抓取率 ≥90%——账本证明「有用例」，变异证「用例有效」
+2. 外部核对 provenance：CI 二次构建或独立签名，才谈得上「可信」
+3. 外部采用仍为 0：所有带分母指标的分母都只是单仓数据
 
 ## 阻塞
 
