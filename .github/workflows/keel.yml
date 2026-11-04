@@ -45,6 +45,17 @@ jobs:
       - name: 升级引擎自测（11 项场景）
         run: bash keel-starter/keel/checks/test-upgrade.sh
 
+      # 判据存在 ≠ 入口被调用（v3.14.1 的三个缺陷全属后者）。这一层必须进 CI，
+      # 否则「接线断了但套件全绿」仍然只会在下一次发布时被发现。
+      - name: 入口接线审计（26 入口 × 24 判死用例）
+        run: bash keel-starter/keel/checks/wiring/test-wiring.sh --jobs 2
+
+      # 变异试点只报信息、不判红：存活变异体是「用例不够强」的结论，
+      # 不是本轮代码的失败；判红会逼人删掉难杀的变异体来抬分。
+      - name: 变异测试试点（信息性）
+        continue-on-error: true
+        run: bash keel-starter/keel/checks/mutation/run.sh --jobs 2
+
       - name: 发布仓模板自身过一遍 lint
         run: bash keel-starter/keel/checks/keel-lint.sh keel-starter/keel
 

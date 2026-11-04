@@ -8,7 +8,7 @@ keywords: [决策, ADR, 索引, 性能, 批量化]
 | # | 决策（一句话） | 状态 | → 文件 |
 |---|---|---|---|
 | 0001 | 预算=行×字节×单行三约束，budget.env 真源 | active | [0001-budget-three-constraints.md](0001-budget-three-constraints.md) |
-| 0002 | 入口机器验：版本/状态必填+锚点原文 | active | [0002-machine-verified-entry.md](0002-machine-verified-entry.md) |
+| 0002 | 入口机器验：版本/状态必填+锚点原文；v3.15 并入接线审计/变异试点 | active | [0002-machine-verified-entry.md](0002-machine-verified-entry.md) |
 | 0003 | triggers 由 commit-msg 钩子计数，废手工+1 | active | [0003-hook-counted-triggers.md](0003-hook-counted-triggers.md) |
 | 0004 | 孤儿判定用真实链接图，非文件名子串 | active | [0004-orphan-link-graph.md](0004-orphan-link-graph.md) |
 | 0005 | 钩子验谎：lint 16项+verify-hooks | active | [0005-verify-hooks.md](0005-verify-hooks.md) |

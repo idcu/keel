@@ -1,7 +1,7 @@
 # keel · 规格仓
 
 [![keel CI](https://github.com/idcu/keel/actions/workflows/keel.yml/badge.svg)](https://github.com/idcu/keel/actions/workflows/keel.yml)
-[![keel-version](https://img.shields.io/badge/keel--version-3.14.1-4B3FE3)](keel/INDEX.md)
+[![keel-version](https://img.shields.io/badge/keel--version-3.15.0-4B3FE3)](keel/INDEX.md)
 
 > **Keel / 龙骨** —— AI 开发项目的上下文基座 + 轻量合规关卡。
 > 一句话：**让 AI 在任何一次会话里，都能以恒定成本拿到正确的上下文。**
@@ -22,7 +22,7 @@ bash <(curl -fsSL https://gitee.com/idcu/keel-starter/raw/main/install.sh) <你�
 ```
 
 装完还差三步（**缺任一步，这套系统等于不存在**）：贴锚点、填自己的内容、小项目先裁剪。
-脚本会把三步打给你。**要固定版本**加 `--ref v3.14.1`。
+脚本会把三步打给你。**要固定版本**加 `--ref v3.15.0`。
 
 **装完先跑这个**——3 分钟看到这套 Keel 现在什么样（只读不改，不诊断就修）：
 
@@ -49,7 +49,7 @@ bash keel/checks/keel-doctor.sh
 
 ## 状态
 
-- `keel-version` **3.14.1** · `project-state` **building**（唯一存储位置：`keel/INDEX.md` frontmatter）
+- `keel-version` **3.15.0** · `project-state` **building**（唯一存储位置：`keel/INDEX.md` frontmatter）
 - 内核校验：`bash keel/checks/keel-lint.sh keel` → 0 fail
 - lint 自测：`bash keel/checks/test-lint.sh` → 53/53（48 用例 + 3 元检查用例 + 2 元检查）
 - 遵守率：`bash keel/checks/compliance.sh report`（无基线时不作数，见 §11.2）

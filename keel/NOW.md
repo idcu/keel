@@ -3,48 +3,49 @@ scope: now
 status: active
 last-verified: 2026-11-04
 updated: 2026-11-04
-keywords: [判据, 覆盖率, 元检查, provenance, 3.14.0]
+keywords: [接线, 变异, 入口矩阵, 3.15.0]
 ---
 
 # NOW · main
 
 ## 当前焦点
 
-**第十六轮：分母扩到元检查（L1）+ 清单绑定 provenance（L2）；发 v3.14.0，补 3.14.1。**
-第十五轮（判据覆盖率账本）见 git 历史。
+**第十七轮：入口级接线审计（L1）+ 变异测试试点（L2）；发 v3.15.0。**
+第十六轮（元检查进分母 + provenance）见 git 历史。
 
 ## 本轮进度
 
-- [x] `test-lint.py` 增 `META_CASES`：DOC / LOCALE / PROSE 各一条判死用例；
-      自测分母 50 → 53（48 用例 + 3 元检查用例 + 2 元检查）
-- [x] 账本分母 19 → 22（含元检查）→ 23（含 §9.3-BUDGET）；三口径同屏打印
-- [x] `§9.3-BUDGET` 给正式编号（用例 20 已判死）；`§9.1-15` 仍不给——
-      给不了判死用例就不登记
-- [x] `verify-report.json` 增 `provenance`（commit / dirty / 4 文件 sha256 /
-      平台 / locale / 时间）；`release.sh` 用 `--repo` 校验，三种不一致都拦
-- [x] `check-verify-report` 自检 11 → 17，含 4 条真 git 仓库负控
-- [x] 3.14.1 修两处「判据存在但没被调用」：provenance 校验只在 claims 路径生效
-      （`--report --repo` 静默 exit 0）、`--repo` 拼路径少一层 `keel/`；
-      拆 `structure_problems()` + 3 条 CLI 级用例，自检 17 → 20
+- [x] `checks/wiring/test-wiring.py`：26 个 CLI/发布入口 × 24 条判死用例，
+      矩阵进 verify-report.json 的 `wiring`；`wiring=0` 与 `n/a` 分开
+- [x] 三条 v3.14.0 缺陷回归：W16 无 `--claims` 的 commit 不符、W17 `<repo>/keel/`
+      布局、W18 `--claims/--summary` 与含混文案；删任一修复对应用例即红
+- [x] `checks/mutation/`：9 条 §9.1 判据 × 16 变异体 / 3 类算子
+- [x] wiring 抓出 1 条新缺陷：`verify.py --suites <子集>` 在
+      `mutation=None` 时走 `else` 分支 TypeError（W14 判死，已改 `elif`）
+- [x] verify 套件 8 → 9；清单自检 20 → 27；两处进清单、变异不进发布门禁
+- [x] CI：项目仓 workflow 增加 wiring（门禁）与 mutation（`continue-on-error`）
 
 ## 实测
 
-- 判据覆盖：**22/23（含元检查与预算检查，95.7%）**；含元检查 21/22（95.5%）；
-  仅 §9.1 18/19（94.7%）；`coverage=0` 仍只有 §9.1-15
-- 负控：commit 不符、自称干净、sha256 已变、旧清单、只给 `--repo`，全部判死
-- 发布：v3.14.0 → 补 v3.14.1（先 starter 后项目仓；tag 双向）；冒烟 **125/0/1**，
-  新 clone 账本 11/11 + 自检 20/20，`install --ref v3.14.1` 落 3.14.1 且 lint 通过
+- 接线：**26/26 入口有判死用例 · 24/24 用例通过 · wiring=0: 0 · n/a: 0**；
+  全套件内 156.4s（`--jobs 4`），单跑 161–173s
+- 变异：**15/16 被杀（93.8%）**，存活 M10（§9.1-10 的 INDEX/CONSTITUTION 分支，
+  用例 17 只删 NOW.md）；实测 47.1s
+- 门禁：lint 两仓 0 fail；test-lint **53/53**；账本 11/11；清单自检 **27/27**
+- 全量 verify：**158 通过 / 0 失败 / 1 跳过（未验证）**，31:59
+  （跳过 = test-lint 用例 44，macOS 大小写不敏感卷；Linux 下 53/53）
+- 发布：v3.15.0；先 starter 后项目仓；tag 双向验证 + 真安装冒烟
 
 ## 下一步
 
-1. 变异测试：19 项 × ≥1 变异体，抓取率 ≥90%——账本证明「有用例」，变异证「用例有效」
-2. 外部核对 provenance：CI 二次构建或独立签名，才谈得上「可信」
-3. 外部采用仍为 0：所有带分母指标的分母都只是单仓数据
+1. 补 §9.1-10 的 INDEX/CONSTITUTION 分支用例，把 M10 杀掉（下一轮首件）
+2. 变异扩到 §9.3 meta（DOC/LOCALE/PROSE）与边界值，不追分只找盲区
+3. test-upgrade 1229s 占全量 64%，考虑安全并行（断言不减）
+4. 外部核对 provenance / 外部采用仍为 0——带分母指标仍只是单仓数据
 
 ## 阻塞
 
 | 卡在 | 解锁条件 | 绕行 |
 |---|---|---|
 | Windows 运行时未验证 | 可跑 bash 的 Windows | 静态判据 + 三档结论 |
-| 无 Docker 真故障未跑 | 有 Docker 的机器 | 清单显式记 SKIP（未验证） |
 | 外部采用为零 | 真实用户安装并使用 3 轮 | 无（不靠改代码解决） |

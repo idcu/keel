@@ -2101,6 +2101,28 @@ v3.13.0 的分母只有 §9.1 的 19 条——`DOC` / `LOCALE` / `PROSE` 三个�
 判据自检 17 → 20，新增 3 条 CLI 级用例——函数级用例测不到这层接线。
 
 
+**入口接线审计（v3.15.0）**：
+
+判据账本只能证明「有用例」，证明不了「入口被调用」。v3.14.0 的三个缺陷
+（无 `--claims` 静默绿、`--repo` 少一层 `keel/`）全部同型。v3.15.0 增
+`checks/wiring/test-wiring.py`：26 个 CLI/发布入口逐条登记，每条至少一条**判死用例**
+（断言具体退出码 + 输出片段 + 磁盘变化），并输出入口—用例—覆盖矩阵到
+`verify-report.json` 的 `wiring` 小节。没有判死用例的入口必须 `status=none` 且写原因
+（`wiring=0`），本仓不存在的脚本（如不随 `keel/` 分发的 `scripts/release.sh`）标 `n/a`——
+两者不混同，都不许沉默。`check-verify-report.py` 校验矩阵自洽：`negative` 必须引用
+存在的用例、`none` 必须写原因、计数必须与状态重合；有 `wiring=0` 时发行说明不得写
+「全部通过」且必须显式写 `wiring=0`。
+
+**变异测试试点（v3.15.0）**：
+
+`checks/mutation/mutation.py` 对 9 条可机械注入的 §9.1 判据造 16 个变异体
+（删 fail 分支 / 条件取反 / 边界偏移 ×2），在独立 keel 树副本上跑对应判死用例，
+要求变异体**必须让用例变红**。得分进 `verify-report.json` 的 `mutation` 小节，
+带分母（`killed+survived+invalid=mutants`），且**不进门禁**——低分是结论不是缺陷；
+若把存活判成 FAIL，下一轮只会删掉难杀的变异体来抬分。排除的判据逐条写理由
+（warn 级、环境依赖、与已选判据同型等）。诚实边界：抓不到接线错、判据语义正确
+但放宽幅度未被 fixture 命中、跨文件/跨版本行为。
+
 **两站镜像（Gitee 主 + GitHub 镜像）**：
 
 - `.gitmodules` 用**相对 URL** `../keel-starter.git`：两个托管站各自解析到同站同级仓库，CI 与人都不需要改配置；
