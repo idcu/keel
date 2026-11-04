@@ -653,17 +653,17 @@ triggers ≥ 3 → lint 持续 ⚠️ 提醒
 
 ### 9.3 `checks/keel-lint.sh`
 
-实测版（兼容 macOS 自带 bash 3.2；已通过 **48 例**故障注入——**38 例 fail（覆盖 37 类缺陷）**：超行数 / 超字节 / 单行超限 / 目录文件数 / frontmatter 缺失·超行数·超字节 / 字段缺失 / status 值域 / severity 值域 / keywords 为空 / 日期格式 / 缺 triggers / 命名含日期 / 命名含大写 / **域索引含正文** / 索引漏登记 / 引用环 / 引用环外的**链接图孤儿**（含"正文提及但未链接"的回归例）/ 缺必读文件 / 缺 keel-version / 缺 project-state / 缺预算真源 / **缺闭环钩子本体** / 缺点火锚点 / 死链（含冷区）/ 三段式缺失 / 例外决策缺 created / superseded-by 指向不存在 / **CHANGELOG 缺当期小节** / **README 徽章版本漂移** / **CRLF 换行** / **文件名仅大小写不同**；**2 类告警**：陈旧 / 蒸馏阈值；**8 类合法基线**：MVP 全绿 / `_template` 三级豁免 / `decisions/` 陈旧豁免 / `stale-check: off` 逃生口 / frontmatter 行内注释 / 模板占位字段不算数 / **无 CHANGELOG 与 README 的纯模板安装态 / 无徽章的自带 CHANGELOG（ADR 0016）**。**另有一项元检查**：`NOISE` —— 全部 48 例的 stderr 必须为空或命中显式豁免白名单（ADR 0014；此前此处只是一句描述，没人断言它）。
+实测版（兼容 macOS 自带 bash 3.2；已通过 **50 例**故障注入——**40 例 fail（覆盖 37 类缺陷）**：超行数 / 超字节 / 单行超限 / 目录文件数 / frontmatter 缺失·超行数·超字节 / 字段缺失 / status 值域 / severity 值域 / keywords 为空 / 日期格式 / 缺 triggers / 命名含日期 / 命名含大写 / **域索引含正文** / 索引漏登记 / 引用环 / 引用环外的**链接图孤儿**（含"正文提及但未链接"的回归例）/ 缺必读文件 / 缺 keel-version / 缺 project-state / 缺预算真源 / **缺闭环钩子本体** / 缺点火锚点 / 死链（含冷区）/ 三段式缺失 / 例外决策缺 created / superseded-by 指向不存在 / **CHANGELOG 缺当期小节** / **README 徽章版本漂移** / **CRLF 换行** / **文件名仅大小写不同**；**2 类告警**：陈旧 / 蒸馏阈值；**8 类合法基线**：MVP 全绿 / `_template` 三级豁免 / `decisions/` 陈旧豁免 / `stale-check: off` 逃生口 / frontmatter 行内注释 / 模板占位字段不算数 / **无 CHANGELOG 与 README 的纯模板安装态 / 无徽章的自带 CHANGELOG（ADR 0016）**。**另有一项元检查**：`NOISE` —— 全部 50 例的 stderr 必须为空或命中显式豁免白名单（ADR 0014；此前此处只是一句描述，没人断言它）。
 
 > 写这版脚本时实测抓到两个 bash 3.2 的坑，已修并在注释里标了出处：
 > ① **变量后紧跟中文标点必须写成 `${st}）`，不能写 `$st）`**——实测在部分环境下 bash 3.2 会把中文标点的首字节并进变量名，`set -u` 下直接报 `unbound variable`（v2 脚本里 5 处都有这个问题）；
 > ② **BSD / macOS 的 `tsort` 遇环仍然返回 0**，只把 `cycle in data` 写到 stderr（GNU `tsort` 才返回 1），所以环检测必须同时看退出码与 stderr。
 > 这正是 §9 存在的理由：**"机器验的东西，必须先自己验过"**——包括验证脚本自己。
 
-**怎么复现这 48 例**：`keel-starter` 随仓库带自测套件，用例与 §9.1 检查表一一对应（每个用例都标注它对应哪一行）：
+**怎么复现这 50 例**：`keel-starter` 随仓库带自测套件，用例与 §9.1 检查表一一对应（每个用例都标注它对应哪一行）：
 
 ```bash
-bash keel/checks/test-lint.sh              # 48 例 + 元检查 + 文档一致性检查
+bash keel/checks/test-lint.sh              # 50 例 + 元检查 + 文档一致性检查
 bash keel/checks/test-lint.sh -v --keep     # 逐例详细输出，并保留临时 fixture 供排查
 ```
 
@@ -1747,7 +1747,7 @@ bash keel/checks/check-mcp-config.sh        # 恒 exit 0：未接入不算缺陷
 | ① 工具侧规则（§4 锚点） | 每次任务开始 | AI 按协议读取与写回；**锚点存在性与原文一致性由 lint 检查**（§9.1-10） |
 | ② pre-commit | `keel/` 下 md 有变更时 | `bash keel/checks/keel-lint.sh keel`，0 fail 才放行 |
 | ③ commit-msg | 每次提交 | 扫描 message 里的 `pitfall: <文件名>`，自动给对应条目 `triggers` +1 并 stage（§7.4） |
-| ④ CI | push / PR | lint 必须 0 fail；**自测必须 53/53**（`bash keel/checks/test-lint.sh`，§9.3）；钩子本体与可执行位由 lint 第 16 项守（§9.1）；PR 模板含"写回确认"勾选项 |
+| ④ CI | push / PR | lint 必须 0 fail；**自测必须 55/55**（`bash keel/checks/test-lint.sh`，§9.3）；钩子本体与可执行位由 lint 第 16 项守（§9.1）；PR 模板含"写回确认"勾选项 |
 | 兜底 | —— | `NOW.updated` 超 7 天 → lint ⚠️（提示会话可能未写回） |
 
 **【铁律】①②③④ 缺一，强制闭环就不成立。** 钩子由 `keel-starter` 的 `checks/install-hooks.sh` 落地（§12.1）——**只在文档里写钩子、不安装钩子，等于没有钩子**；v2 的"铁律"与 MVP 五件套自相矛盾（MVP 里既没有钩子也没有 CI），v3 已把四件事一起并入 MVP。
@@ -1899,7 +1899,7 @@ keel/
 └── checks/                  # keel-lint.sh + budget.env + rules.md + test-lint.sh/.py
 │                            # + install-hooks.sh + verify-hooks.sh + hooks/{pre-commit, commit-msg}
 ＋ archive/.gitkeep · NOW-history/.gitkeep   # 空目录不被 git 跟踪（§3.3 规则 5）
-＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 53/53（§10.4 之四）
+＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 55/55（§10.4 之四）
 ＋ PR 模板（.github/pull_request_template.md）——"写回确认"勾选项（§10.4 之四）
 ＋ 工具侧锚点 1 句（AGENTS.md 首行）——没有它，上面这些文件不会被读到（§10.4 之一）
 ＋ checks/keel-doctor.sh —— 装完一键自证（v3.4.5）
@@ -1917,7 +1917,7 @@ keel/
 2. 装钩子：`bash keel/checks/install-hooks.sh`（pre-commit + commit-msg）；
 3. 贴 CI 片段，并在项目根写入 §4.1 锚点；
 4. 跑 `bash keel/checks/keel-lint.sh keel`——**第一次自检必须 0 fail**（锚点也在检查范围内，§9.1-10）；
-5. 跑 `bash keel/checks/test-lint.sh`——**必须 53/53**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
+5. 跑 `bash keel/checks/test-lint.sh`——**必须 55/55**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
 
 **按需层（不进 MVP，痛点到了再加）**——starter 已带骨架，规格见 §5.7，"怎么填"写在同目录的 `_template*` 里：
 
@@ -2035,7 +2035,7 @@ keel/
 | 真源 | 位置 | 谁守 |
 |---|---|---|
 | 声明 | `keel/INDEX.md` 的 `keel-version` + `CHANGELOG.md` 小节 | 发布关卡 |
-| 可获取 | 发布仓的 `vX.Y.Z` tag | **CI「版本号与 tag 一致」检查** |
+| 可获取 | **两仓**的 `vX.Y.Z` tag | **CI「版本号与 tag 一致」检查 + `release.sh` 推送前校验** |
 
 实测踩过：`keel-version` 升到 3.3.3、CHANGELOG 写了五节，**tag 却只到 v3.1.1**。
 后果不是"少几个标记"——`install.sh --ref <旧版本>`（README 亲口教用户这么用）直接失效，
@@ -2058,6 +2058,11 @@ bash scripts/release.sh --apply    # ① 发布仓 push → ② 项目仓 push�
 并校验 CHANGELOG 当前版本小节与清单一致（含 SKIP/FAIL 时不得出现无条件通过表述），不过就不许推；
 ③ 先推发布仓；④ 再推项目仓，**推送前再查一次指针**（发布仓若刚有新提交，指针会再次失配）。
 第③步失败会直接中止，绝不出现"项目仓推上去了、发布仓没有"的坏状态。
+
+v3.16.0 补上 tag 的对称性：`--apply` 先校验**两仓** annotated tag 都存在且指向 HEAD
+（不满足则一次都不推），两仓的 push 都带 `--follow-tags`，任一失败非 0 退出并打印
+「已完成到哪一步」。跨远端没有真事务原子性，本节只承诺**不把半成功说成成功**；
+接线由入口矩阵 E27 / W25 守住（负控：删项目仓 `--follow-tags` 后必须红）。
 
 **判据覆盖率账本（v3.13.0）**：
 

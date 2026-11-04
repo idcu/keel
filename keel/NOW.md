@@ -1,47 +1,46 @@
 ---
 scope: now
 status: active
-last-verified: 2026-11-04
-updated: 2026-11-04
-keywords: [接线, 变异, 入口矩阵, 3.15.0]
+last-verified: 2026-11-05
+updated: 2026-11-05
+keywords: [分支覆盖, 发布 tag, 并行, 3.16.0]
 ---
 
 # NOW · main
 
 ## 当前焦点
 
-**第十七轮：入口级接线审计（L1）+ 变异测试试点（L2）；发 v3.15.0。**
-第十六轮（元检查进分母 + provenance）见 git 历史。
+**第十八轮：M10 分支覆盖 + 发布两仓 tag + test-upgrade 并行；发 v3.16.0。**
+第十七轮（接线审计 + 变异试点）见 git 历史。
 
 ## 本轮进度
 
-- [x] `checks/wiring/test-wiring.py`：26 个 CLI/发布入口 × 24 条判死用例，
-      矩阵进 verify-report.json 的 `wiring`；`wiring=0` 与 `n/a` 分开
-- [x] 三条 v3.14.0 缺陷回归：W16 无 `--claims` 的 commit 不符、W17 `<repo>/keel/`
-      布局、W18 `--claims/--summary` 与含混文案；删任一修复对应用例即红
-- [x] `checks/mutation/`：9 条 §9.1 判据 × 16 变异体 / 3 类算子
-- [x] wiring 抓出 1 条新缺陷：`verify.py --suites <子集>` 在
-      `mutation=None` 时走 `else` 分支 TypeError（W14 判死，已改 `elif`）
-- [x] verify 套件 8 → 9；清单自检 20 → 27；两处进清单、变异不进发布门禁
-- [x] CI：项目仓 workflow 增加 wiring（门禁）与 mutation（`continue-on-error`）
+- [x] §9.1-10 三个必读分支各一条用例（17 / 49 / 50），**M10 被杀**：
+      核心变异 15/16 → **16/16**（分母 16）
+- [x] `release.sh` 推送前校验两仓 tag 指向 HEAD，两仓 `--follow-tags`；
+      任一失败非 0 且打印已完成步骤；入口 E27 / 用例 W25（正控 + 负控）
+- [x] v3.15.0 项目仓 tag 为手工补推，留痕进 CHANGELOG（从 3.16.0 起脚本执行）
+- [x] `test-upgrade` 24 例线程池并行（默认 `min(4, CPU)`）：每例独立目录，
+      断言计数 `threading.local()`；**未删断言、未加重试**
+- [x] 多分支覆盖审计：8 条风险，最高危 §9.1-2 整份缺 frontmatter / 未闭合
+- [x] **未做**：L4 §9.3 元检查变异扩展（只给分段方案，不进门禁）
 
 ## 实测
 
-- 接线：**26/26 入口有判死用例 · 24/24 用例通过 · wiring=0: 0 · n/a: 0**；
-  全套件内 156.4s（`--jobs 4`），单跑 161–173s
-- 变异：**15/16 被杀（93.8%）**，存活 M10（§9.1-10 的 INDEX/CONSTITUTION 分支，
-  用例 17 只删 NOW.md）；实测 47.1s
-- 门禁：lint 两仓 0 fail；test-lint **53/53**；账本 11/11；清单自检 **27/27**
-- 全量 verify：**158 通过 / 0 失败 / 1 跳过（未验证）**，31:59
-  （跳过 = test-lint 用例 44，macOS 大小写不敏感卷；Linux 下 53/53）
-- 发布：v3.15.0；先 starter 后项目仓；tag 双向验证 + 真安装冒烟
+- 并行前后：**24/24 例 · 303/303 断言**（逐格 0 差异）；
+  648.6s（jobs=1）→ **300.1s（jobs=4）**，2.16×
+  （macOS 15.8.2 / i9-9980HK / 缓存热 / 同机负载）
+- test-lint：**55/55**（50 用例 + 3 元检查用例 + 2 元检查）；用例 44 在 macOS 跳过
+- 接线：**27/27 入口有判死用例 · 25/25 通过 · wiring=0: 0**；变异 **16/16**
+- 全量 verify：**161 通过 / 0 失败 / 1 跳过（未验证）**
+- 发布：v3.16.0；`scripts/release.sh --apply` 两仓 tag 自动推 + 冒烟
 
 ## 下一步
 
-1. 补 §9.1-10 的 INDEX/CONSTITUTION 分支用例，把 M10 杀掉（下一轮首件）
-2. 变异扩到 §9.3 meta（DOC/LOCALE/PROSE）与边界值，不追分只找盲区
-3. test-upgrade 1229s 占全量 64%，考虑安全并行（断言不减）
-4. 外部核对 provenance / 外部采用仍为 0——带分母指标仍只是单仓数据
+1. 补 §9.1-2 的「缺 frontmatter / 未闭合 / 缺 scope·status·last-verified」等 5 个分支
+2. §9.1-16 钩子不可执行、§9.1-12 frozen 新增契约、§9.1-19 缺「升级完成」行同理
+3. L4：fixture 工厂 + 对 DOC/LOCALE/PROSE/INVOKE 各造 1 个实现级变异体
+4. test-upgrade 矩阵（旧版本格）仍串行，`--jobs` 只并行单格内用例
 
 ## 阻塞
 

@@ -1,7 +1,7 @@
 ---
 scope: meta
 status: active
-last-verified: 2026-10-03
+last-verified: 2026-11-05
 keywords: [版本, tag, 分发, 声明与可获取, 纪律, ADR]
 type: decision
 created: 2026-10-03
@@ -50,6 +50,14 @@ CI 新增「版本号与 tag 一致」：`keel-version` 声明了但 `git rev-pa
   这是有意的摩擦——**它拦的是"看起来发布成功了"这种静默失效**。
 - **风险**：annotated tag 推拉在镜像同步时可能有延迟（Gitee→GitHub 约 3–4 分钟，
   §12.3 已记录）。CI 只查本地 tag 是否存在，不受影响。
+
+## 修订（2026-11-05，v3.16.0）
+
+v3.15.0 实测暴露：脚本只推发布仓 tag，项目仓 tag 靠手工补推——「两仓可获取」
+只证成了半边。`release.sh --apply` 现在推送前校验**两仓** annotated tag 存在且指向
+HEAD，再按「先 starter 分支+tag → 后项目仓分支+tag」推送；任一失败非 0 并打印
+已完成到哪一步。跨远端无事务原子性，只保证「不把半成功说成成功」；W25 用正控
+（两裸远端都有 tag）+ 负控（删项目仓 `--follow-tags` 后必红）守住接线。
 
 ## 沉淀
 

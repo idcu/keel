@@ -1,7 +1,7 @@
 ---
 scope: meta
 status: active
-last-verified: 2026-10-03
+last-verified: 2026-11-05
 keywords: [性能, 批量化, xargs, fork, 预算, 时限, ADR]
 type: decision
 created: 2026-10-03
@@ -60,6 +60,13 @@ superseded-by:
   而是"该失败时没失败"（`xargs` 参数当文件名、`$(printf "\n")` 死循环、
   `wc` 汇总行被当文件）——**已全部登记进 `pitfalls/meta/`**。
 - **自证方式**：`keel-lint.sh` 0 fail + 38 例自测（含新增的性能回归护栏）+ CI。
+
+## 修订（2026-11-05，v3.16.0）
+
+此处否掉的是**内核**并行（不可移植）；测试夹具另论。`test-upgrade` 全量
+1130.8s 占 verify 59%，改为线程池（默认 `min(4, CPU)`）：每用例独立临时目录、
+断言计数 `threading.local()`、**不删断言、不加重试**。实测 648.6s(jobs=1) →
+300.1s(jobs=4)，24/24 例 · 303/303 断言逐格一致（0 差异）。矩阵跨版本格仍串行。
 
 ## 蒸馏（§7.4）
 

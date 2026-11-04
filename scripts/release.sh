@@ -93,14 +93,37 @@ if [ "$APPLY" -eq 1 ]; then
   [ "$BR_PROJ" = "HEAD" ] && die "项目仓处于 detached HEAD，无法推送"
 fi
 
+# tag 也必须在两仓各推一次（ADR 0010：`keel-version` 声明与 tag 可获取必须同时成立）。
+# v3.15.0 的缺口：只推 starter 的 tag，项目仓 tag 靠手工补推——「版本号写对了」与
+# 「两仓都能取到版本」是两件事。这里把两仓 tag 都当作推送硬条件：
+#   ① 推送前校验 tag 存在且指向 HEAD（不满足则**一次都不推**）；
+#   ② 两仓的 push 都带 --follow-tags，任一失败立即 die 并打印已完成到哪一步。
+# 跨两个远端做不到真正的事务原子性，但能做到「绝不把半成功说成成功」。
+VER=""
+if [ -f "$SUB/keel/INDEX.md" ]; then
+  VER=$(sed -n 's/^keel-version:[[:space:]]*//p' "$SUB/keel/INDEX.md" | head -1 | tr -d '[:space:]')
+fi
+[ -n "$VER" ] || die "读不到发布仓 keel/INDEX.md 的 keel-version，无法校验 tag"
+TAG="v$VER"
+if [ "$APPLY" -eq 1 ]; then
+  for r in "$SUB" "$PROJ"; do
+    git -C "$r" rev-parse -q --verify "refs/tags/$TAG" >/dev/null \
+      || die "缺少 annotated tag ${TAG}: ${r}（先 git tag -a ${TAG} -m …，两仓都要有；未推送任何分支）"
+    [ "$(git -C "$r" rev-parse "${TAG}^{commit}")" = "$(git -C "$r" rev-parse HEAD)" ] \
+      || die "tag ${TAG} 不指向 HEAD: ${r}（拒绝推送旧 tag；未推送任何分支）"
+  done
+  echo "   ✅ 两仓 tag ${TAG} 均存在且指向 HEAD"
+else
+  echo "   [dry-run] 校验两仓 tag ${TAG} 存在且指向 HEAD（apply 时为硬条件）"
+fi
+
 echo "   ① 发布仓（${BR_STARTER}）—— 必须先推，否则②的指针没人能取到"
 if [ "$APPLY" -eq 1 ]; then
-  git -C "$SUB" push -u origin "$BR_STARTER" || die "发布仓推送失败，已中止（项目仓未推送）"
-  # **tag 也要推**（ADR 0010：`keel-version` 声明与 tag 可获取必须同时成立）。
-  # 实测踩过：`git push origin main` **不带 tag**，`install.sh --ref v3.4.0` 因此装不到，
-  # 而"版本号写对了"与"版本能用"是两件事。--follow-tags 随分支带上可达 tag。
+  git -C "$SUB" push -u origin "$BR_STARTER" || die "发布仓分支推送失败，已中止（项目仓未推送）"
+  # 实测踩过：`git push origin main` **不带 tag**，`install.sh --ref v3.4.0` 因此装不到。
+  # tag 失败不是告警而是失败：版本声明与可获取已经脱节，继续推项目仓只会让状态更难收拾。
   git -C "$SUB" push --follow-tags origin "$BR_STARTER" \
-    || echo "   ⚠️  tag 推送失败——版本声明与可获取已脱节，--ref 将失效（ADR 0010）"
+    || die "发布仓 tag 推送失败（分支已推、tag 未推；项目仓未推送。修好后重跑本脚本）"
 else
   echo "   [dry-run] git -C keel-starter push -u origin $BR_STARTER"
   echo "   [dry-run] git -C keel-starter push --follow-tags origin $BR_STARTER  # tag 必须一起推"
@@ -114,11 +137,17 @@ esac
 
 echo "   ② 项目仓（${BR_PROJ}）"
 if [ "$APPLY" -eq 1 ]; then
-  git -C "$PROJ" push -u origin "$BR_PROJ" || die "项目仓推送失败（发布仓已推送成功，重跑会跳过它）"
+  # 项目仓同样带 tag：v3.15.0 之前这里只推分支，项目仓的 vX.Y.Z 永远停在本地。
+  git -C "$PROJ" push --follow-tags -u origin "$BR_PROJ" \
+    || die "项目仓推送失败（发布仓分支+tag 已推送成功；项目仓状态未完成，重跑本脚本）"
 else
-  echo "   [dry-run] git -C $PROJ push -u origin $BR_PROJ"
+  echo "   [dry-run] git -C $PROJ push --follow-tags -u origin $BR_PROJ  # 两仓 tag 都要推"
 fi
 
 echo "──"
-if [ "$APPLY" -eq 1 ]; then echo "✅ 两仓推送完成（顺序正确：发布仓 → 项目仓）"; else echo "（dry-run 未推送）确认无误后重跑：bash scripts/release.sh --apply"; fi
+if [ "$APPLY" -eq 1 ]; then
+  echo "✅ 两仓推送完成（顺序正确：发布仓分支+tag → 项目仓分支+tag）"
+else
+  echo "（dry-run 未推送）确认无误后重跑：bash scripts/release.sh --apply"
+fi
 exit 0
