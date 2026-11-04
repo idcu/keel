@@ -77,6 +77,7 @@ v3.13.0 的分母只有 19 条编号，`DOC` / `LOCALE` / `PROSE` 三个元检�
   `sha256`、平台、locale、`generated_at`。
 - `check-verify-report.py --repo <发布仓>`：commit ≠ HEAD、自称干净却有未提交文件、
   sha256 已变，三种都 FAIL；`release.sh --apply` 在推送前跑同一条命令。
-  `--selftest` 用真 git 仓库加 4 条负控（11 → 17）。
+  `--selftest` 用真 git 仓库加 4 条负控（11 → 17）；v3.14.1 再加 3 条 CLI 级
+  用例（17 → 20），因为「只给 `--repo` 不给 `--claims`」这条路径曾静默绿。
 - 诚实边界：只证明「清单与代码自洽」，不证明可信；**刻意不写「防篡改」**——
   自洽的假清单随时能造，没有外部核对就不上升。
