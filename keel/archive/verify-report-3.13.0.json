@@ -1,0 +1,512 @@
+{
+  "schema": 1,
+  "generated_at": "2026-11-04T08:48:44+08:00",
+  "label": "release 3.13.0",
+  "environment": {
+    "platform": "darwin",
+    "platform_release": "24.6.0",
+    "python": "3.13.5",
+    "locale": {
+      "LANG": "zh_CN.UTF-8",
+      "LC_ALL": null,
+      "LC_CTYPE": null
+    },
+    "container_image": "python:3.11",
+    "engine_version": "3.13.0",
+    "matrix_jobs": "4"
+  },
+  "suites": [
+    {
+      "name": "claims-selftest",
+      "status": "PASS",
+      "skip_reason": null,
+      "cases": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "duration_s": 0.0
+    },
+    {
+      "name": "checks-ledger",
+      "status": "PASS",
+      "skip_reason": null,
+      "cases": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "duration_s": 0.1
+    },
+    {
+      "name": "lint",
+      "status": "PASS",
+      "skip_reason": null,
+      "cases": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration_s": 1.3
+    },
+    {
+      "name": "manifest",
+      "status": "PASS",
+      "skip_reason": null,
+      "cases": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration_s": 1.9
+    },
+    {
+      "name": "test-lint",
+      "status": "SKIP",
+      "skip_reason": "[SKIP] 44 文件名仅大小写不同（Windows 不区分大小写会互相覆盖）             §9.1-18",
+      "cases": 50,
+      "passed": 49,
+      "failed": 0,
+      "skipped": 1,
+      "duration_s": 17.6
+    },
+    {
+      "name": "test-upgrade",
+      "status": "PASS",
+      "skip_reason": null,
+      "cases": 24,
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0,
+      "duration_s": 434.8
+    },
+    {
+      "name": "test-faults",
+      "status": "PASS",
+      "skip_reason": null,
+      "cases": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "duration_s": 34.8
+    },
+    {
+      "name": "matrix",
+      "status": "PASS",
+      "skip_reason": null,
+      "cases": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "duration_s": 118.6,
+      "cells": [
+        {
+          "cell": "3.6.1",
+          "status": "PASS"
+        },
+        {
+          "cell": "3.7.4",
+          "status": "PASS"
+        },
+        {
+          "cell": "3.8.0",
+          "status": "PASS"
+        },
+        {
+          "cell": "3.9.0",
+          "status": "PASS"
+        },
+        {
+          "cell": "3.10.0",
+          "status": "PASS"
+        },
+        {
+          "cell": "current",
+          "status": "PASS"
+        },
+        {
+          "cell": "3.4.11",
+          "status": "PASS"
+        },
+        {
+          "cell": "3.5.0",
+          "status": "PASS"
+        },
+        {
+          "cell": "REG-1",
+          "status": "PASS"
+        }
+      ]
+    }
+  ],
+  "matrix_cells": [
+    {
+      "cell": "3.6.1",
+      "status": "PASS"
+    },
+    {
+      "cell": "3.7.4",
+      "status": "PASS"
+    },
+    {
+      "cell": "3.8.0",
+      "status": "PASS"
+    },
+    {
+      "cell": "3.9.0",
+      "status": "PASS"
+    },
+    {
+      "cell": "3.10.0",
+      "status": "PASS"
+    },
+    {
+      "cell": "current",
+      "status": "PASS"
+    },
+    {
+      "cell": "3.4.11",
+      "status": "PASS"
+    },
+    {
+      "cell": "3.5.0",
+      "status": "PASS"
+    },
+    {
+      "cell": "REG-1",
+      "status": "PASS"
+    }
+  ],
+  "checks_ledger": {
+    "schema": 1,
+    "generated_at": "2026-11-04T08:48:44+08:00",
+    "scope": {
+      "numbered": "§9.1-1..19",
+      "extension_slot": "§9.1-15",
+      "excludes": [
+        "元检查（NOISE/INVOKE/DOC/LOCALE/PROSE）",
+        "动态套件（test-upgrade/test-faults/matrix）",
+        "§9.3 预算真源检查（单列 auxiliary）"
+      ]
+    },
+    "design_check": {
+      "path": "/Volumes/Data/keel/DESIGN.md",
+      "status": "checked",
+      "rows": 19
+    },
+    "totals": {
+      "numbered": 19,
+      "implemented": 18,
+      "extension": 1,
+      "negative": 18,
+      "negative_fail_level": 16,
+      "negative_warn_level": 2,
+      "positive_only": 0,
+      "none": 1,
+      "coverage_pct_of_numbered": 94.7,
+      "coverage_pct_of_implemented": 100.0
+    },
+    "checks": [
+      {
+        "id": "§9.1-1",
+        "level": "fail",
+        "kind": "rule",
+        "title": "大小：行数 / 字节 / 单行字节 / 单目录文件数超限",
+        "cases": 4,
+        "negative_cases": 4,
+        "death_cases": 4,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-2",
+        "level": "fail",
+        "kind": "rule",
+        "title": "frontmatter：缺失、字段缺失、行数 / 字节超限",
+        "cases": 4,
+        "negative_cases": 4,
+        "death_cases": 4,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-3",
+        "level": "fail",
+        "kind": "rule",
+        "title": "死链：@路径 与 markdown 链接指向不存在的文件",
+        "cases": 1,
+        "negative_cases": 1,
+        "death_cases": 1,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-4",
+        "level": "fail",
+        "kind": "rule",
+        "title": "孤儿：热区文档未被任何热区文档以链接引用",
+        "cases": 2,
+        "negative_cases": 2,
+        "death_cases": 2,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-5",
+        "level": "fail",
+        "kind": "rule",
+        "title": "坑条目三段式（症状 / 根因 / 正解）缺失",
+        "cases": 1,
+        "negative_cases": 1,
+        "death_cases": 1,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-6",
+        "level": "fail",
+        "kind": "rule",
+        "title": "值域：status / severity / keywords / last-verified / triggers",
+        "cases": 4,
+        "negative_cases": 4,
+        "death_cases": 4,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-7",
+        "level": "fail",
+        "kind": "rule",
+        "title": "登记：坑未进 pitfalls/INDEX；域索引含非表格正文",
+        "cases": 3,
+        "negative_cases": 3,
+        "death_cases": 3,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-8",
+        "level": "fail",
+        "kind": "rule",
+        "title": "命名：热区文件名含日期 / 大写 / 下划线 / 空格",
+        "cases": 2,
+        "negative_cases": 2,
+        "death_cases": 2,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-9",
+        "level": "fail",
+        "kind": "rule",
+        "title": "循环引用：md → md 引用图存在环",
+        "cases": 1,
+        "negative_cases": 1,
+        "death_cases": 1,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-10",
+        "level": "fail",
+        "kind": "rule",
+        "title": "必读与点火：必读文件缺失、根索引缺字段、锚点不一致",
+        "cases": 4,
+        "negative_cases": 4,
+        "death_cases": 4,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-11",
+        "level": "fail",
+        "kind": "rule",
+        "title": "状态机：frozen 期间新增 contracts；单月例外决策 >2",
+        "cases": 1,
+        "negative_cases": 1,
+        "death_cases": 1,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-12",
+        "level": "warn",
+        "kind": "rule",
+        "title": "陈旧：last-verified 超 30 天；NOW 的 updated 超 7 天",
+        "cases": 1,
+        "negative_cases": 1,
+        "death_cases": 0,
+        "warn_cases": 1,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-13",
+        "level": "warn",
+        "kind": "rule",
+        "title": "待蒸馏：triggers ≥ 3 且 status ≠ distilled",
+        "cases": 1,
+        "negative_cases": 1,
+        "death_cases": 0,
+        "warn_cases": 1,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-14",
+        "level": "fail",
+        "kind": "rule",
+        "title": "取代关系：decisions/* 的 superseded-by 指向不存在文件",
+        "cases": 1,
+        "negative_cases": 1,
+        "death_cases": 1,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-15",
+        "level": "extension",
+        "kind": "extension",
+        "title": "契约漂移 / 术语混用（项目扩展位，内核不实现）",
+        "cases": 0,
+        "negative_cases": 0,
+        "death_cases": 0,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "none"
+      },
+      {
+        "id": "§9.1-16",
+        "level": "fail",
+        "kind": "rule",
+        "title": "闭环钩子本体：pre-commit / commit-msg 缺失或不可执行",
+        "cases": 1,
+        "negative_cases": 1,
+        "death_cases": 1,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-17",
+        "level": "fail",
+        "kind": "rule",
+        "title": "版本副本一致：keel-version / CHANGELOG / README 徽章",
+        "cases": 4,
+        "negative_cases": 2,
+        "death_cases": 2,
+        "warn_cases": 0,
+        "baseline_cases": 2,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-18",
+        "level": "fail",
+        "kind": "rule",
+        "title": "跨平台底线：CRLF；仅大小写不同的路径",
+        "cases": 2,
+        "negative_cases": 2,
+        "death_cases": 2,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      },
+      {
+        "id": "§9.1-19",
+        "level": "fail",
+        "kind": "rule",
+        "title": "写路径收敛：禁止裸 cp/mv/install、sed -i、重定向直写",
+        "cases": 4,
+        "negative_cases": 4,
+        "death_cases": 4,
+        "warn_cases": 0,
+        "baseline_cases": 0,
+        "coverage": "negative"
+      }
+    ],
+    "auxiliary": [
+      {
+        "id": "§12.1",
+        "note": "MVP 全绿基线",
+        "cases": 1,
+        "negative_cases": 0,
+        "baseline_cases": 1
+      },
+      {
+        "id": "§3.4",
+        "note": "命名豁免的合法基线（支持性用例，不是独立检查项）",
+        "cases": 2,
+        "negative_cases": 0,
+        "baseline_cases": 2
+      },
+      {
+        "id": "§6.1",
+        "note": "frontmatter 行内注释的合法基线",
+        "cases": 1,
+        "negative_cases": 0,
+        "baseline_cases": 1
+      },
+      {
+        "id": "§9.3",
+        "note": "预算真源检查（有负例），不在 §9.1 编号内",
+        "cases": 1,
+        "negative_cases": 1,
+        "baseline_cases": 0
+      },
+      {
+        "id": "§9.4",
+        "note": "陈旧豁免的合法基线",
+        "cases": 2,
+        "negative_cases": 0,
+        "baseline_cases": 2
+      }
+    ],
+    "meta": [
+      {
+        "id": "NOISE",
+        "counted_in_selftest_total": true,
+        "note": "全部用例的 stderr 必须为空或命中显式豁免（ADR 0014）"
+      },
+      {
+        "id": "INVOKE",
+        "counted_in_selftest_total": true,
+        "note": "lint 的入参形式无关（相对 / 绝对 / . / 带空格）"
+      },
+      {
+        "id": "DOC",
+        "counted_in_selftest_total": false,
+        "note": "脚本与 DESIGN §9.3 逐字一致；失败会计入 bad，但不进自测总数"
+      },
+      {
+        "id": "LOCALE",
+        "counted_in_selftest_total": false,
+        "note": "段 3 LC_ALL 不泄漏；段 4 与 locale 无关"
+      },
+      {
+        "id": "PROSE",
+        "counted_in_selftest_total": false,
+        "note": "门面散文数字与真源一致；不进自测总数"
+      }
+    ],
+    "out_of_scope": [
+      "test-upgrade",
+      "test-faults",
+      "matrix"
+    ],
+    "errors": []
+  },
+  "summary": {
+    "passed": 109,
+    "failed": 0,
+    "skipped": 1,
+    "verified": false
+  }
+}

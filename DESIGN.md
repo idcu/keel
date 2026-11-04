@@ -653,7 +653,7 @@ triggers ≥ 3 → lint 持续 ⚠️ 提醒
 
 ### 9.3 `checks/keel-lint.sh`
 
-实测版（兼容 macOS 自带 bash 3.2；已通过 **48 例**故障注入——**39 例 fail（覆盖 37 类缺陷）**：超行数 / 超字节 / 单行超限 / 目录文件数 / frontmatter 缺失·超行数·超字节 / 字段缺失 / status 值域 / severity 值域 / keywords 为空 / 日期格式 / 缺 triggers / 命名含日期 / 命名含大写 / **域索引含正文** / 索引漏登记 / 引用环 / 引用环外的**链接图孤儿**（含"正文提及但未链接"的回归例）/ 缺必读文件 / 缺 keel-version / 缺 project-state / 缺预算真源 / **缺闭环钩子本体** / 缺点火锚点 / 死链（含冷区）/ 三段式缺失 / 例外决策缺 created / superseded-by 指向不存在 / **CHANGELOG 缺当期小节** / **README 徽章版本漂移** / **CRLF 换行** / **文件名仅大小写不同**；**2 类告警**：陈旧 / 蒸馏阈值；**8 类合法基线**：MVP 全绿 / `_template` 三级豁免 / `decisions/` 陈旧豁免 / `stale-check: off` 逃生口 / frontmatter 行内注释 / 模板占位字段不算数 / **无 CHANGELOG 与 README 的纯模板安装态 / 无徽章的自带 CHANGELOG（ADR 0016）**。**另有一项元检查**：`NOISE` —— 全部 48 例的 stderr 必须为空或命中显式豁免白名单（ADR 0014；此前此处只是一句描述，没人断言它）。
+实测版（兼容 macOS 自带 bash 3.2；已通过 **48 例**故障注入——**38 例 fail（覆盖 37 类缺陷）**：超行数 / 超字节 / 单行超限 / 目录文件数 / frontmatter 缺失·超行数·超字节 / 字段缺失 / status 值域 / severity 值域 / keywords 为空 / 日期格式 / 缺 triggers / 命名含日期 / 命名含大写 / **域索引含正文** / 索引漏登记 / 引用环 / 引用环外的**链接图孤儿**（含"正文提及但未链接"的回归例）/ 缺必读文件 / 缺 keel-version / 缺 project-state / 缺预算真源 / **缺闭环钩子本体** / 缺点火锚点 / 死链（含冷区）/ 三段式缺失 / 例外决策缺 created / superseded-by 指向不存在 / **CHANGELOG 缺当期小节** / **README 徽章版本漂移** / **CRLF 换行** / **文件名仅大小写不同**；**2 类告警**：陈旧 / 蒸馏阈值；**8 类合法基线**：MVP 全绿 / `_template` 三级豁免 / `decisions/` 陈旧豁免 / `stale-check: off` 逃生口 / frontmatter 行内注释 / 模板占位字段不算数 / **无 CHANGELOG 与 README 的纯模板安装态 / 无徽章的自带 CHANGELOG（ADR 0016）**。**另有一项元检查**：`NOISE` —— 全部 48 例的 stderr 必须为空或命中显式豁免白名单（ADR 0014；此前此处只是一句描述，没人断言它）。
 
 > 写这版脚本时实测抓到两个 bash 3.2 的坑，已修并在注释里标了出处：
 > ① **变量后紧跟中文标点必须写成 `${st}）`，不能写 `$st）`**——实测在部分环境下 bash 3.2 会把中文标点的首字节并进变量名，`set -u` 下直接报 `unbound variable`（v2 脚本里 5 处都有这个问题）；
@@ -2058,6 +2058,17 @@ bash scripts/release.sh --apply    # ① 发布仓 push → ② 项目仓 push�
 并校验 CHANGELOG 当前版本小节与清单一致（含 SKIP/FAIL 时不得出现无条件通过表述），不过就不许推；
 ③ 先推发布仓；④ 再推项目仓，**推送前再查一次指针**（发布仓若刚有新提交，指针会再次失配）。
 第③步失败会直接中止，绝不出现"项目仓推上去了、发布仓没有"的坏状态。
+
+**判据覆盖率账本（v3.13.0）**：
+
+`verify-report.json` 的 `checks_ledger` 小节把「哪些判据有负例」变成机器事实：
+
+- 清单来自 `checks/verify/checks-ledger.py` 的 19 条登记（§9.1-1..19）；覆盖状态从 `test-lint.py` 的 `CASES` **自动推导**，不维护第二份手写覆盖表。
+- 三档：`negative`（有负例：fail 级 rc=1；warn 级 rc=0 且断言了告警）、`positive_only`（只有合法基线）、`none`（无用例，即 `coverage=0`）。
+- 分母固定 19，并同时打印「按已实现 18 项」的百分比；§9.3 预算检查与 5 个元检查单列 `auxiliary`/`meta`，不并入 19。
+- **账本不是成绩单**：覆盖率只证明「存在一个能触发它的用例」，不证明用例本身有效——后者是变异测试，不在本账本承诺内。
+
+判据（缺一即 FAIL）：三档之和 = 判据总数；`negative` 必须 `negative_cases>0`；`positive_only` 必须有用例且负例为 0；`none` 必须 `cases==0`；`checks_ledger` 缺失即 FAIL。
 
 **两站镜像（Gitee 主 + GitHub 镜像）**：
 
