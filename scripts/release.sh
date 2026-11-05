@@ -72,8 +72,10 @@ if [ "$APPLY" -eq 1 ]; then
 import json, sys
 rep = json.load(open(sys.argv[1], encoding="utf-8"))
 p = rep["provenance"]
-print("   commit %s · dirty %d 个文件 · 4 个判据文件 sha256 已记录"
-      % ((p["commit"] or "未知")[:12], p["dirty_files"]))
+shas = [v for v in (p.get("checks_sha256") or {}).values() if v]
+n = len(p.get("checks_sha256") or {})
+print("   commit %s · dirty %d 个文件 · %d/%d 个判据文件 sha256 已记录"
+      % ((p["commit"] or "未知")[:12], p["dirty_files"], len(shas), n))
 print("   ⚠️ 只证明清单与代码自洽；没有外部核对时不是「可信」")
 PY
   rm -f "$VERIFY_JSON"
