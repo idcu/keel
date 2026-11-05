@@ -1,8 +1,8 @@
 ---
 scope: meta
 status: active
-last-verified: 2026-11-03
-keywords: [坑库, 索引, shell, 性能, 批量化]
+last-verified: 2026-11-06
+keywords: [坑库, 索引]
 ---
 
 | 症状 | scope | 严重度 | → |
@@ -15,13 +15,13 @@ keywords: [坑库, 索引, shell, 性能, 批量化]
 | install遍历shift吃版本 | meta | P0 | [arg-shift](meta/arg-parse-shift-while-iterating.md) |
 | JSON空值n/a解析失败 | meta | P2 | [handwritten-json-nan-placeholder](meta/handwritten-json-nan-placeholder.md) |
 | 两仓全绿submodule有+ | meta | P1 | [submodule-pointer](meta/submodule-pointer-drift-not-machine-checked.md) |
-| 归档NOW-history报死链 | meta | P3 | [cold-zone-link-prefix](meta/cold-zone-link-prefix.md) |
-| 举例链接语法判死链(蒸馏) | meta | P3 | [link-example-real-link](archive/link-syntax-example-becomes-real-link.md) |
+| 冷区报死链 | meta | P3 | [cold-zone](meta/cold-zone-link-prefix.md) |
+| 举例链接判死链 | meta | P3 | [link-example-real-link](archive/link-syntax-example-becomes-real-link.md) |
 | 新clone即红1211>1200 | meta | P0 | [byte-budget-assumes-lf](meta/byte-budget-assumes-lf.md) |
 | worktree误报27孤儿 | meta | P1 | [worktree-eol](meta/worktree-eol-differs-from-main.md) |
 | test-lint全FAIL无输出 | meta | P0 | [harness-invokes-bare-bash](meta/harness-invokes-bare-bash.md) |
 | check-mcp rc=7假绿 | meta | P3 | [check-mcp-path](meta/check-mcp-config-only-proves-path.md) |
-| stderr SAFE_DELETE堆积(蒸馏) | meta | P3 | [safe-delete-shim-blocks-cleanup](archive/safe-delete-shim-blocks-cleanup.md) |
+| stderr 白名单堆积 | meta | P3 | [safe-delete-shim-blocks-cleanup](archive/safe-delete-shim-blocks-cleanup.md) |
 | load-estimate超限改不动 | meta | P2 | [broad-keyword-false-overrun](meta/broad-keyword-false-overrun.md) |
 | 批量化误报39漏真坑 | meta | P1 | [awk-enfile-ignores-skip-state](meta/awk-enfile-ignores-skip-state.md) |
 | release推分支漏tag | meta | P1 | [release-pushes-branch-not-tag](meta/release-pushes-branch-not-tag.md) |
@@ -34,3 +34,4 @@ keywords: [坑库, 索引, shell, 性能, 批量化]
 | null仍PASS | meta | P0 | [null-sha](validator-passes-null-sha.md) |
 | 采用方全绿 | meta | P0 | [adopter-green](adopter-all-green.md) |
 | 冷区/缺副本静默PASS | meta | P0 | [cold-zone](cold-zone-not-exempt.md) |
+| 账本自洽少判据 | meta | P0 | [ledger](ledger-self-consistent.md) |
