@@ -1747,7 +1747,7 @@ bash keel/checks/check-mcp-config.sh        # 恒 exit 0：未接入不算缺陷
 | ① 工具侧规则（§4 锚点） | 每次任务开始 | AI 按协议读取与写回；**锚点存在性与原文一致性由 lint 检查**（§9.1-10） |
 | ② pre-commit | `keel/` 下 md 有变更时 | `bash keel/checks/keel-lint.sh keel`，0 fail 才放行 |
 | ③ commit-msg | 每次提交 | 扫描 message 里的 `pitfall: <文件名>`，自动给对应条目 `triggers` +1 并 stage（§7.4） |
-| ④ CI | push / PR | lint 必须 0 fail；**自测必须 55/55**（`bash keel/checks/test-lint.sh`，§9.3）；钩子本体与可执行位由 lint 第 16 项守（§9.1）；PR 模板含"写回确认"勾选项 |
+| ④ CI | push / PR | lint 必须 0 fail；**自测必须 60 项全过、0 失败**（`bash keel/checks/test-lint.sh`，§9.3）；钩子本体与可执行位由 lint 第 16 项守（§9.1）；PR 模板含"写回确认"勾选项 |
 | 兜底 | —— | `NOW.updated` 超 7 天 → lint ⚠️（提示会话可能未写回） |
 
 **【铁律】①②③④ 缺一，强制闭环就不成立。** 钩子由 `keel-starter` 的 `checks/install-hooks.sh` 落地（§12.1）——**只在文档里写钩子、不安装钩子，等于没有钩子**；v2 的"铁律"与 MVP 五件套自相矛盾（MVP 里既没有钩子也没有 CI），v3 已把四件事一起并入 MVP。
@@ -1899,7 +1899,7 @@ keel/
 └── checks/                  # keel-lint.sh + budget.env + rules.md + test-lint.sh/.py
 │                            # + install-hooks.sh + verify-hooks.sh + hooks/{pre-commit, commit-msg}
 ＋ archive/.gitkeep · NOW-history/.gitkeep   # 空目录不被 git 跟踪（§3.3 规则 5）
-＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 55/55（§10.4 之四）
+＋ CI 片段（.github/workflows/keel.yml）——lint 0 fail + 自测 60 项 0 失败（§10.4 之四）
 ＋ PR 模板（.github/pull_request_template.md）——"写回确认"勾选项（§10.4 之四）
 ＋ 工具侧锚点 1 句（AGENTS.md 首行）——没有它，上面这些文件不会被读到（§10.4 之一）
 ＋ checks/keel-doctor.sh —— 装完一键自证（v3.4.5）
@@ -1917,7 +1917,7 @@ keel/
 2. 装钩子：`bash keel/checks/install-hooks.sh`（pre-commit + commit-msg）；
 3. 贴 CI 片段，并在项目根写入 §4.1 锚点；
 4. 跑 `bash keel/checks/keel-lint.sh keel`——**第一次自检必须 0 fail**（锚点也在检查范围内，§9.1-10）；
-5. 跑 `bash keel/checks/test-lint.sh`——**必须 55/55**。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
+5. 跑 `bash keel/checks/test-lint.sh`——**必须 60 项全过、0 失败**（平台性跳过会单独计数，但不计入通过）。这一步验的不是你的仓库，而是**你手上的 lint 到底能不能判死它声称能判死的问题**；将来改检查项时它也是唯一的护栏。
 
 **按需层（不进 MVP，痛点到了再加）**——starter 已带骨架，规格见 §5.7，"怎么填"写在同目录的 `_template*` 里：
 
