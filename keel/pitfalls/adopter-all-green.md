@@ -3,7 +3,7 @@ scope: meta
 status: active
 severity: P0
 last-verified: 2026-11-06
-triggers: 0
+triggers: 1
 keywords: [采用方, SKIP, 全绿, manifest, 判据篡改, 三态]
 ---
 

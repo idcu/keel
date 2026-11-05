@@ -51,7 +51,7 @@ bash keel/checks/keel-doctor.sh
 
 - `keel-version` **3.16.0** · `project-state` **building**（唯一存储位置：`keel/INDEX.md` frontmatter）
 - 内核校验：`bash keel/checks/keel-lint.sh keel` → 0 fail
-- lint 自测：`bash keel/checks/test-lint.sh` → 60 项（50 用例 + 4 元检查用例 + 6 元检查），0 失败才放行
+- lint 自测：`bash keel/checks/test-lint.sh` → 62 项（52 用例 + 4 元检查用例 + 6 元检查），0 失败才放行
 - 遵守率：`bash keel/checks/compliance.sh report`（无基线时不作数，见 §11.2）
 
 > 本节的数字由两处机器守：徽章 / CHANGELOG / keel-version 三副本归 lint 第 17 项（§9.1-17），

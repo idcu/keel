@@ -8,17 +8,17 @@ keywords: [坑库, 索引, shell, 性能, 批量化]
 | 症状 | scope | 严重度 | → |
 |---|---|---|---|
 | 批量化误报缺fm | meta | P1 | [xargs-arg](meta/xargs-arg-becomes-filename.md) |
-| shell查表挂死 | meta | P2 | [command-substitution-eats-newline](meta/command-substitution-eats-newline.md) |
+| shell查表挂死 | meta | P2 | [cmd-subst-eats-newline](meta/command-substitution-eats-newline.md) |
 | wc total假fail | meta | P2 | [wc-total-line-treated-as-file](meta/wc-total-line-treated-as-file.md) |
 | install验错对象 | meta | P0 | [install-verifies-wrong-dir](meta/install-verifies-wrong-dir.md) |
-| awk字典序峰值偏小 | meta | P2 | [awk-string-vs-number-compare](archive/awk-string-vs-number-compare.md) |
-| install遍历shift吃版本 | meta | P0 | [arg-parse-shift-while-iterating](meta/arg-parse-shift-while-iterating.md) |
+| awk字典序峰值偏小 | meta | P2 | [awk-str-num](archive/awk-string-vs-number-compare.md) |
+| install遍历shift吃版本 | meta | P0 | [arg-shift](meta/arg-parse-shift-while-iterating.md) |
 | JSON空值n/a解析失败 | meta | P2 | [handwritten-json-nan-placeholder](meta/handwritten-json-nan-placeholder.md) |
 | 两仓全绿submodule有+ | meta | P1 | [submodule-pointer](meta/submodule-pointer-drift-not-machine-checked.md) |
 | 归档NOW-history报死链 | meta | P3 | [cold-zone-link-prefix](meta/cold-zone-link-prefix.md) |
-| 举例链接语法判死链(蒸馏) | meta | P3 | [link-syntax-example-becomes-real-link](archive/link-syntax-example-becomes-real-link.md) |
+| 举例链接语法判死链(蒸馏) | meta | P3 | [link-example-real-link](archive/link-syntax-example-becomes-real-link.md) |
 | 新clone即红1211>1200 | meta | P0 | [byte-budget-assumes-lf](meta/byte-budget-assumes-lf.md) |
-| worktree误报27孤儿 | meta | P1 | [worktree-eol-differs-from-main](meta/worktree-eol-differs-from-main.md) |
+| worktree误报27孤儿 | meta | P1 | [worktree-eol](meta/worktree-eol-differs-from-main.md) |
 | test-lint全FAIL无输出 | meta | P0 | [harness-invokes-bare-bash](meta/harness-invokes-bare-bash.md) |
 | check-mcp rc=7假绿 | meta | P3 | [check-mcp-path](meta/check-mcp-config-only-proves-path.md) |
 | stderr SAFE_DELETE堆积(蒸馏) | meta | P3 | [safe-delete-shim-blocks-cleanup](archive/safe-delete-shim-blocks-cleanup.md) |
@@ -33,3 +33,4 @@ keywords: [坑库, 索引, shell, 性能, 批量化]
 | 清单吞打印SKIP | meta | P1 | [report-parser-swallows-skip](meta/report-parser-swallows-skip.md) |
 | null仍PASS | meta | P0 | [null-sha](validator-passes-null-sha.md) |
 | 采用方全绿 | meta | P0 | [adopter-green](adopter-all-green.md) |
+| 冷区/缺副本静默PASS | meta | P0 | [cold-zone](cold-zone-not-exempt.md) |
