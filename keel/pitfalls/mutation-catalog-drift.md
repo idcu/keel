@@ -3,7 +3,7 @@ scope: meta
 status: active
 severity: P0
 last-verified: 2026-11-06
-triggers: 1
+triggers: 2
 keywords: [变异, 清单, 算子, 哈希, 复算]
 ---
 
