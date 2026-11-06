@@ -64,10 +64,13 @@ def load_mutation(mutants_path=DEFAULT_MUTANTS, results_path=DEFAULT_RESULTS,
         res, rerrs = mod.load_results(results_path)
         errors = enum["errors"] + merrs + exerrs + rerrs
         per = {}
+        crit_ex = {}
         if muts and ex and res and not errors:
             per, _totals, serrs = mod.summarize(res.get("mutants", []), muts, ex)
             errors = errors + serrs + mod.verify_data(enum, muts, ex, res)
-        return {"per": per, "errors": errors,
+            crit_ex = {e["mutant"]: e for e in ex["rows"]
+                       if e["mutant"].startswith("§")}
+        return {"per": per, "errors": errors, "criteria_exempt": crit_ex,
                 "manifest_sha256": enum.get("manifest_sha256")}
     except Exception as e:   # 变异引擎不可用时，账本不能假装有数据
         return {"per": {}, "errors": ["变异数据不可用：%s" % e], "manifest_sha256": None}
@@ -184,6 +187,7 @@ def build(criteria, cases, design_text=None, meta_cases=None, mutation=None):
     if mutation is not None:
         errors.extend(mutation.get("errors") or [])
     per_mutation = (mutation or {}).get("per") or {}
+    criteria_exempt = (mutation or {}).get("criteria_exempt") or {}
 
     known = {r["id"] for r in criteria} | set(EXTRA_ALIAS)
     for ref in sorted({c[2] for c in cases}):
@@ -237,7 +241,12 @@ def build(criteria, cases, design_text=None, meta_cases=None, mutation=None):
         else:
             reason = "无用例"
 
-        m = per_mutation.get(r["id"]) or MUTATION_ZERO
+        m = per_mutation.get(r["id"])
+        if m is None and r["id"] in criteria_exempt:
+            m = dict(MUTATION_ZERO)
+            m.update({"exempt": 1, "status": "EXEMPT",
+                      "evidence": "criterion-exempt:%s" % r["id"]})
+        m = m or MUTATION_ZERO
         rows.append({
             "id": r["id"], "section": r["section"], "level": r["level"],
             "kind": r["kind"], "counted": r["counted"], "title": r["title"],

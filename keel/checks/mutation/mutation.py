@@ -42,27 +42,48 @@ MUTANTS = os.path.join(HERE, "mutants.tsv")
 EXEMPTIONS = os.path.join(HERE, "exemptions.tsv")
 RESULTS = os.path.join(HERE, "results.json")
 REPORT = os.path.join(HERE, "mutation-report.json")
+CRITERIA = os.path.join(KEEL, "checks", "verify", "criteria.tsv")
 
 FAIL_RE = re.compile(r"^\[FAIL\] (\S+)", re.M)
 
-# 未纳入本轮变异的判据与理由（逐条写清，不允许只挑好做的）。
-EXCLUDED = [
-    ("§9.1-5", "三段式缺失：多段 grep 聚合，删任一条与 §9.1-2 的「字段存在性」同型；按检查类型抽样"),
-    ("§9.1-7", "索引登记：两段式（grep 索引 + awk 表格），断单行只能测到登记分支；与 §9.1-4 同型"),
-    ("§9.1-8", "命名规则：含文件系统大小写敏感性交互（用例 44 在 macOS 默认盘上跳过），跨平台非确定"),
-    ("§9.1-9", "引用环：依赖可选工具 tsort，缺 tsort 时判据本身 SKIP；变异存活会变成环境噪声"),
-    ("§9.1-11", "状态机例外：ADR 例外字段多分支，断单条与 §9.1-6 的值域检查同型"),
-    ("§9.1-12", "陈旧告警：warn_msg 且退出码仍为 0；本轮只做 fail 级判据"),
-    ("§9.1-13", "待蒸馏：阈值告警，同 §9.1-12，非 fail 级"),
-    ("§9.1-14", "superseded 指向：目标文件存在性，与 §9.1-4 同型"),
-    ("§9.1-15", "项目扩展位：内核不实现，没有可变异的代码"),
-    ("§9.1-16", "钩子本体：文件存在性，与 §9.1-10 同型"),
-    ("§9.3 meta", "DOC/LOCALE/PROSE/SPEC 元检查：注入变异需要另一套 fixture 工厂；留给下一轮"),
-]
+# 覆盖复核：counted=yes 的 24 条判据全部有位点（30 个变异体）或判据级 not_mutable
+# 豁免（§9.1-15，理由在 exemptions.tsv）。这里不再维护第二份"未覆盖"清单——
+# 两份清单必然漂移；由 summarize() 对 criteria.tsv 逐条校验，缺位点且未豁免即红。
+EXCLUDED = []
 
 
 def sha256_text(s):
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
+
+
+def sha256_file(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def refresh_digest(d, target):
+    """把变异后判据脚本的 sha256 写回临时树的 manifest.tsv。
+
+    靶子是判据脚本本身，而 SPEC-DIGEST（§9.3-SPEC）会拿脚本 sha 与 manifest 比对：
+    不隔离的话，**任何**变异都会顺带打红它，存活/被杀就分不清是「被测判据没反应」
+    还是「另一条元检查顺手兜住」。这里只改临时树、不碰仓里的 manifest。
+    """
+    mp = os.path.join(d, "keel", "checks", "manifest.tsv")
+    if not os.path.isfile(mp):
+        return
+    new = sha256_file(os.path.join(d, "keel", target))
+    out = []
+    for line in read(mp).splitlines():
+        p = line.split("\t")
+        if len(p) >= 4 and p[0] == "kernel" and p[1] == target:
+            p[3] = new
+            line = "\t".join(p)
+        out.append(line)
+    with open(mp, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(out) + "\n")
 
 
 def read(path):
@@ -177,6 +198,21 @@ def load_mutants(path=MUTANTS):
             "rows": rows, "text": text}, errors
 
 
+def load_criteria(path=CRITERIA):
+    """counted=yes 的判据 ID：变异覆盖必须逐个对上，不能静默略过。"""
+    ids = []
+    if not os.path.isfile(path):
+        return ids, ["判据清单缺失：%s" % path]
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip() or line.startswith("#"):
+                continue
+            p = line.rstrip("\n").split("\t")
+            if len(p) >= 5 and p[4] == "yes":
+                ids.append(p[0])
+    return ids, []
+
+
 def load_exemptions(path=EXEMPTIONS, today=None):
     today = today or datetime.date.today().isoformat()
     if not os.path.isfile(path):
@@ -194,7 +230,11 @@ def load_exemptions(path=EXEMPTIONS, today=None):
                 errors.append("%s:%d 列数=%d，应为 5" % (path, lineno, len(parts)))
                 continue
             mid, kind, reason, expires, condition = parts
-            if kind not in ("equivalent", "deferred"):
+            if mid.startswith("§"):
+                if kind != "not_mutable":
+                    errors.append("%s:%d 判据级豁免 kind=%s 非法（应为 not_mutable）"
+                                  % (path, lineno, kind))
+            elif kind not in ("equivalent", "deferred"):
                 errors.append("%s:%d kind=%s 非法（应为 equivalent/deferred）"
                               % (path, lineno, kind))
             if not reason.strip():
@@ -224,16 +264,22 @@ def copy_tree(root, name):
 
 
 def case_ids(cases):
-    return ",".join(sorted(cases.split(","), key=lambda x: int(x)))
+    return ",".join(sorted(cases.split(","),
+                           key=lambda x: (0, int(x)) if x.isdigit() else (1, x)))
 
 
 def run_case_subset(d, cases):
+    parts = cases.split(",")
+    if any(not c.isdigit() for c in parts):
+        # 元检查用例（§9.3-*）只在不带 --only 的全量运行里执行。
+        return run([PY, os.path.join(d, "keel/checks/test-lint.py")], cwd=d)
     return run([PY, os.path.join(d, "keel/checks/test-lint.py"),
                 "--only", case_ids(cases)], cwd=d)
 
 
 def baseline(root, sites):
-    union = sorted({c for s in sites for c in s["cases"].split(",")}, key=lambda x: int(x))
+    union = sorted({c for s in sites for c in s["cases"].split(",")},
+                   key=lambda x: (0, int(x)) if x.isdigit() else (1, x))
     d = copy_tree(root, "baseline")
     rc, out = run_case_subset(d, ",".join(union))
     fails = FAIL_RE.findall(out)
@@ -253,6 +299,7 @@ def one_mutant(root, m):
                 "detail": "变异锚点命中 %d 次（应为 1）" % text.count(m["old"])}
     with open(path, "w", encoding="utf-8") as fh:
         fh.write(text.replace(m["old"], m["new"], 1))
+    refresh_digest(d, m["target"])
     rc, out = run_case_subset(d, m["cases"])
     fails = FAIL_RE.findall(out)
     want = set(m["cases"].split(","))
@@ -270,11 +317,25 @@ def one_mutant(root, m):
 def summarize(results, mutants, exemptions):
     """从逐条结果推导每条判据与总数；任何不一致都进 errors。"""
     errors = []
-    ex = {e["mutant"]: e for e in exemptions["rows"]}
+    crit_ids, cierr = load_criteria()
+    errors += cierr
+    crit_ex = {e["mutant"]: e for e in exemptions["rows"]
+               if e["mutant"].startswith("§")}
+    ex = {e["mutant"]: e for e in exemptions["rows"]
+          if not e["mutant"].startswith("§")}
     ids = {m["id"] for m in mutants["rows"]}
+    refs = {m["ref"] for m in mutants["rows"]}
     for mid, e in ex.items():
         if mid not in ids:
             errors.append("豁免引用了不存在的变异体：%s" % mid)
+    for cid, e in crit_ex.items():
+        if cid not in crit_ids:
+            errors.append("判据级豁免引用了不存在的判据：%s" % cid)
+        elif cid in refs:
+            errors.append("判据 %s 已有变异位点，却声明不可变异" % cid)
+    for cid in crit_ids:
+        if cid not in refs and cid not in crit_ex:
+            errors.append("判据无变异位点且未豁免：%s" % cid)
     per = {}
     for m in mutants["rows"]:
         per.setdefault(m["ref"], {"total": 0, "killed": 0, "survived": 0,
@@ -553,7 +614,14 @@ def print_recompute(payload, committed, duration, jobs):
 
 
 def negctl():
-    """三条负控必须真判死。返回 (killed, total)。"""
+    """四条负控必须真判死。返回 (killed, total)。
+
+    前三条验证"引擎会抓假绿"（已杀说等价 / 数量写死 / 存活报已杀）；第四条是
+    探测体：优先取本轮**实测的真实存活体**（results.json 里 status=survived 的
+    变异体），把它在 exemptions.tsv 里的 deferred 豁免临时摘掉，门禁必须红在
+    「存活变异体未豁免 + 该变异体 id」这条报错上。无真实存活体时退回合成存活体。
+    探测体不写回 results.json，也不进正式杀伤率分母——它是引擎自检证据。
+    """
     results = []
 
     def run_case(name, cond, detail=""):
@@ -626,6 +694,27 @@ def negctl():
             drift = compare_results(actual, forged)
             run_case("负控3 存活被报告成已杀", got["status"] == "survived" and bool(drift),
                      (drift[0] if drift else "伪造结果未被复算抓住"))
+            # 探测体：优先用本轮实测的真实存活体，摘掉它的 deferred 豁免，
+            # 门禁必须红在"存活变异体未豁免 + 该 id"上。真实存活体不进新分母：
+            # 这里只重放已提交结果，不新增变异体。
+            real = next((r for r in (res or {}).get("mutants", [])
+                         if r["status"] == "survived"), None)
+            if real and muts and ex:
+                stripped = {"rows": [e for e in ex["rows"]
+                                     if e["mutant"] != real["id"]]}
+                _per, _tot, gate_errs = summarize(res["mutants"], muts, stripped)
+                targeted = [e for e in gate_errs
+                            if "存活变异体未豁免" in e and real["id"] in e]
+                run_case("探测体 真实存活体摘豁免 → 引擎红在报错信息",
+                         bool(targeted), targeted[0] if targeted else "未红在存活体报错上")
+            else:
+                _per, _tot, gate_errs = summarize(
+                    [got], {"rows": [row]}, {"rows": []})
+                targeted = [e for e in gate_errs
+                            if "存活变异体未豁免" in e and got["id"] in e]
+                run_case("探测体 合成存活体 → 引擎红在报错信息",
+                         got["status"] == "survived" and bool(targeted),
+                         targeted[0] if targeted else "未红在存活体报错上")
         else:
             run_case("负控3 存活被报告成已杀", False, msg)
     finally:

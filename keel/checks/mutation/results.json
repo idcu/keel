@@ -1,28 +1,31 @@
 {
   "schema": 2,
-  "generated_at": "2026-11-06T08:21:45+08:00",
+  "generated_at": "2026-11-06T18:43:59+08:00",
   "engine": "operators.py v1",
   "operators": [
     "invert_guard",
+    "invert_if",
     "relax_match",
     "remove_check",
+    "remove_emit",
     "shift_bound"
   ],
   "jobs": 8,
-  "duration_s": 20.8,
+  "duration_s": 78.0,
   "targets": {
-    "checks/keel-lint.sh": "61eacb5bbb4c682f810ffa2a8ecb2c22bdb6d0e488560e857ea99a0c6d6f3057"
+    "checks/keel-lint.sh": "61eacb5bbb4c682f810ffa2a8ecb2c22bdb6d0e488560e857ea99a0c6d6f3057",
+    "checks/test-lint.py": "92faf8c70e304a95c3dada5f2c1b64d0988a0aa58941be2930145c418661850d"
   },
-  "manifest_sha256": "239400ced467f3c5c241a996f84b642c6f623ee69e8b4ab23448210bec593524",
+  "manifest_sha256": "ceb4c41ac3b64920dafb65383cbf4fd73cbefaca7f9b9eacbf310c3a2825e25b",
   "totals": {
-    "mutants": 16,
-    "killed": 16,
-    "survived": 0,
+    "mutants": 30,
+    "killed": 28,
+    "survived": 2,
     "equivalent": 0,
-    "exempt": 0,
+    "exempt": 2,
     "invalid": 0,
-    "score_denominator": 16,
-    "score_pct": 100.0
+    "score_denominator": 30,
+    "score_pct": 93.3
   },
   "criteria": [
     {
@@ -46,6 +49,61 @@
       "invalid": 0,
       "status": "PASS",
       "evidence": "eb9d3da0df24:killed,ce5068be6cb6:killed"
+    },
+    {
+      "id": "§9.1-11",
+      "mutants": 1,
+      "killed": 1,
+      "survived": 0,
+      "equivalent": 0,
+      "exempt": 0,
+      "invalid": 0,
+      "status": "PASS",
+      "evidence": "66846108164c:killed"
+    },
+    {
+      "id": "§9.1-12",
+      "mutants": 1,
+      "killed": 1,
+      "survived": 0,
+      "equivalent": 0,
+      "exempt": 0,
+      "invalid": 0,
+      "status": "PASS",
+      "evidence": "252874e88fb3:killed"
+    },
+    {
+      "id": "§9.1-13",
+      "mutants": 1,
+      "killed": 1,
+      "survived": 0,
+      "equivalent": 0,
+      "exempt": 0,
+      "invalid": 0,
+      "status": "PASS",
+      "evidence": "923b083eb308:killed"
+    },
+    {
+      "id": "§9.1-14",
+      "mutants": 1,
+      "killed": 1,
+      "survived": 0,
+      "equivalent": 0,
+      "exempt": 0,
+      "invalid": 0,
+      "status": "PASS",
+      "evidence": "57e28306f19e:killed"
+    },
+    {
+      "id": "§9.1-16",
+      "mutants": 1,
+      "killed": 1,
+      "survived": 0,
+      "equivalent": 0,
+      "exempt": 0,
+      "invalid": 0,
+      "status": "PASS",
+      "evidence": "3044836a1697:killed"
     },
     {
       "id": "§9.1-17",
@@ -114,6 +172,17 @@
       "evidence": "8c9bf5fe7109:killed"
     },
     {
+      "id": "§9.1-5",
+      "mutants": 1,
+      "killed": 1,
+      "survived": 0,
+      "equivalent": 0,
+      "exempt": 0,
+      "invalid": 0,
+      "status": "PASS",
+      "evidence": "40e83bf57e97:killed"
+    },
+    {
       "id": "§9.1-6",
       "mutants": 2,
       "killed": 2,
@@ -123,6 +192,94 @@
       "invalid": 0,
       "status": "PASS",
       "evidence": "33dd7c187a39:killed,b4c725ca61a5:killed"
+    },
+    {
+      "id": "§9.1-7",
+      "mutants": 1,
+      "killed": 1,
+      "survived": 0,
+      "equivalent": 0,
+      "exempt": 0,
+      "invalid": 0,
+      "status": "PASS",
+      "evidence": "e135e0bf942b:killed"
+    },
+    {
+      "id": "§9.1-8",
+      "mutants": 1,
+      "killed": 1,
+      "survived": 0,
+      "equivalent": 0,
+      "exempt": 0,
+      "invalid": 0,
+      "status": "PASS",
+      "evidence": "dd8b3b73d82c:killed"
+    },
+    {
+      "id": "§9.1-9",
+      "mutants": 1,
+      "killed": 1,
+      "survived": 0,
+      "equivalent": 0,
+      "exempt": 0,
+      "invalid": 0,
+      "status": "PASS",
+      "evidence": "3e4e2a80a7f3:killed"
+    },
+    {
+      "id": "§9.3-BUDGET",
+      "mutants": 1,
+      "killed": 1,
+      "survived": 0,
+      "equivalent": 0,
+      "exempt": 0,
+      "invalid": 0,
+      "status": "PASS",
+      "evidence": "97d1d961067c:killed"
+    },
+    {
+      "id": "§9.3-DOC",
+      "mutants": 1,
+      "killed": 1,
+      "survived": 0,
+      "equivalent": 0,
+      "exempt": 0,
+      "invalid": 0,
+      "status": "PASS",
+      "evidence": "34c12296b00c:killed"
+    },
+    {
+      "id": "§9.3-LOCALE",
+      "mutants": 1,
+      "killed": 0,
+      "survived": 1,
+      "equivalent": 0,
+      "exempt": 1,
+      "invalid": 0,
+      "status": "EXEMPT",
+      "evidence": "cee6a6d6f577:survived"
+    },
+    {
+      "id": "§9.3-PROSE",
+      "mutants": 1,
+      "killed": 1,
+      "survived": 0,
+      "equivalent": 0,
+      "exempt": 0,
+      "invalid": 0,
+      "status": "PASS",
+      "evidence": "dc2fd568e302:killed"
+    },
+    {
+      "id": "§9.3-SPEC",
+      "mutants": 1,
+      "killed": 0,
+      "survived": 1,
+      "equivalent": 0,
+      "exempt": 1,
+      "invalid": 0,
+      "status": "EXEMPT",
+      "evidence": "e5309688d1aa:survived"
     }
   ],
   "mutants": [
@@ -335,65 +492,234 @@
       ],
       "rc": 1,
       "detail": ""
+    },
+    {
+      "id": "40e83bf57e97",
+      "site": "S17",
+      "ref": "§9.1-5",
+      "operator": "remove_emit",
+      "cases": "00,24",
+      "status": "killed",
+      "by": [
+        "24"
+      ],
+      "rc": 1,
+      "detail": ""
+    },
+    {
+      "id": "e135e0bf942b",
+      "site": "S18",
+      "ref": "§9.1-7",
+      "operator": "remove_emit",
+      "cases": "00,14",
+      "status": "killed",
+      "by": [
+        "14"
+      ],
+      "rc": 1,
+      "detail": ""
+    },
+    {
+      "id": "dd8b3b73d82c",
+      "site": "S19",
+      "ref": "§9.1-8",
+      "operator": "remove_check",
+      "cases": "00,12,13",
+      "status": "killed",
+      "by": [
+        "12"
+      ],
+      "rc": 1,
+      "detail": ""
+    },
+    {
+      "id": "3e4e2a80a7f3",
+      "site": "S20",
+      "ref": "§9.1-9",
+      "operator": "remove_check",
+      "cases": "00,16",
+      "status": "killed",
+      "by": [
+        "16"
+      ],
+      "rc": 1,
+      "detail": ""
+    },
+    {
+      "id": "66846108164c",
+      "site": "S21",
+      "ref": "§9.1-11",
+      "operator": "remove_check",
+      "cases": "00,28",
+      "status": "killed",
+      "by": [
+        "28"
+      ],
+      "rc": 1,
+      "detail": ""
+    },
+    {
+      "id": "252874e88fb3",
+      "site": "S22",
+      "ref": "§9.1-12",
+      "operator": "remove_check",
+      "cases": "00,26",
+      "status": "killed",
+      "by": [
+        "26"
+      ],
+      "rc": 1,
+      "detail": ""
+    },
+    {
+      "id": "923b083eb308",
+      "site": "S23",
+      "ref": "§9.1-13",
+      "operator": "remove_check",
+      "cases": "00,27",
+      "status": "killed",
+      "by": [
+        "27"
+      ],
+      "rc": 1,
+      "detail": ""
+    },
+    {
+      "id": "57e28306f19e",
+      "site": "S24",
+      "ref": "§9.1-14",
+      "operator": "remove_check",
+      "cases": "00,31",
+      "status": "killed",
+      "by": [
+        "31"
+      ],
+      "rc": 1,
+      "detail": ""
+    },
+    {
+      "id": "3044836a1697",
+      "site": "S25",
+      "ref": "§9.1-16",
+      "operator": "remove_check",
+      "cases": "00,36",
+      "status": "killed",
+      "by": [
+        "36"
+      ],
+      "rc": 1,
+      "detail": ""
+    },
+    {
+      "id": "97d1d961067c",
+      "site": "S26",
+      "ref": "§9.3-BUDGET",
+      "operator": "remove_check",
+      "cases": "00,20",
+      "status": "killed",
+      "by": [
+        "20"
+      ],
+      "rc": 1,
+      "detail": ""
+    },
+    {
+      "id": "34c12296b00c",
+      "site": "S27",
+      "ref": "§9.3-DOC",
+      "operator": "invert_guard",
+      "cases": "00,§9.3-DOC",
+      "status": "killed",
+      "by": [
+        "§9.3-DOC"
+      ],
+      "rc": 1,
+      "detail": ""
+    },
+    {
+      "id": "cee6a6d6f577",
+      "site": "S28",
+      "ref": "§9.3-LOCALE",
+      "operator": "invert_if",
+      "cases": "00,§9.3-LOCALE",
+      "status": "survived",
+      "by": [],
+      "rc": 1,
+      "detail": "变红但不是目标用例：[]"
+    },
+    {
+      "id": "dc2fd568e302",
+      "site": "S29",
+      "ref": "§9.3-PROSE",
+      "operator": "invert_guard",
+      "cases": "00,§9.3-PROSE",
+      "status": "killed",
+      "by": [
+        "§9.3-PROSE"
+      ],
+      "rc": 1,
+      "detail": ""
+    },
+    {
+      "id": "e5309688d1aa",
+      "site": "S30",
+      "ref": "§9.3-SPEC",
+      "operator": "invert_guard",
+      "cases": "00,§9.3-SPEC",
+      "status": "survived",
+      "by": [],
+      "rc": 1,
+      "detail": "变红但不是目标用例：['SPEC-DIGEST']"
     }
   ],
-  "exemptions": [],
+  "exemptions": [
+    {
+      "mutant": "§9.1-15",
+      "kind": "not_mutable",
+      "reason": "内核不实现项目扩展位（DESIGN §9.2），没有可注入的判据代码；替换为契约漂移/术语混用的项目侧判据时移除",
+      "expires": "2027-06-30",
+      "condition": "项目在 keel/checks/ 落地契约漂移判据后，把该条改为真实位点"
+    },
+    {
+      "mutant": "cee6a6d6f577",
+      "kind": "deferred",
+      "reason": "§9.3-LOCALE 反转结构哨兵：m02 fixture 自带泄漏，行为哨兵先返回 False，目标用例仍 PASS；无泄漏路径因 leaks[0] 越界抛 IndexError（rc=1 但无 [FAIL]），判据实际已退化而测试未覆盖该路径",
+      "expires": "2026-12-31",
+      "condition": "m02 增加「无泄漏脚本不得报错」用例后复测；能判死则删此条，否则改位点"
+    },
+    {
+      "mutant": "e5309688d1aa",
+      "kind": "deferred",
+      "reason": "§9.3-SPEC 反转 sha 比较：m04 只断言返回 False，未变文件误报也满足，故目标用例仍 PASS；漏报（被篡改文件不点名）未被断言，门禁红仅来自外层 SPEC-DIGEST",
+      "expires": "2026-12-31",
+      "condition": "m04 增加「报错必须点名被篡改文件、且不得点名未变文件」断言后复测"
+    }
+  ],
   "selected": [
     "§9.1-1",
     "§9.1-10",
+    "§9.1-11",
+    "§9.1-12",
+    "§9.1-13",
+    "§9.1-14",
+    "§9.1-16",
     "§9.1-17",
     "§9.1-18",
     "§9.1-19",
     "§9.1-2",
     "§9.1-3",
     "§9.1-4",
-    "§9.1-6"
+    "§9.1-5",
+    "§9.1-6",
+    "§9.1-7",
+    "§9.1-8",
+    "§9.1-9",
+    "§9.3-BUDGET",
+    "§9.3-DOC",
+    "§9.3-LOCALE",
+    "§9.3-PROSE",
+    "§9.3-SPEC"
   ],
-  "excluded": [
-    {
-      "ref": "§9.1-5",
-      "reason": "三段式缺失：多段 grep 聚合，删任一条与 §9.1-2 的「字段存在性」同型；按检查类型抽样"
-    },
-    {
-      "ref": "§9.1-7",
-      "reason": "索引登记：两段式（grep 索引 + awk 表格），断单行只能测到登记分支；与 §9.1-4 同型"
-    },
-    {
-      "ref": "§9.1-8",
-      "reason": "命名规则：含文件系统大小写敏感性交互（用例 44 在 macOS 默认盘上跳过），跨平台非确定"
-    },
-    {
-      "ref": "§9.1-9",
-      "reason": "引用环：依赖可选工具 tsort，缺 tsort 时判据本身 SKIP；变异存活会变成环境噪声"
-    },
-    {
-      "ref": "§9.1-11",
-      "reason": "状态机例外：ADR 例外字段多分支，断单条与 §9.1-6 的值域检查同型"
-    },
-    {
-      "ref": "§9.1-12",
-      "reason": "陈旧告警：warn_msg 且退出码仍为 0；本轮只做 fail 级判据"
-    },
-    {
-      "ref": "§9.1-13",
-      "reason": "待蒸馏：阈值告警，同 §9.1-12，非 fail 级"
-    },
-    {
-      "ref": "§9.1-14",
-      "reason": "superseded 指向：目标文件存在性，与 §9.1-4 同型"
-    },
-    {
-      "ref": "§9.1-15",
-      "reason": "项目扩展位：内核不实现，没有可变异的代码"
-    },
-    {
-      "ref": "§9.1-16",
-      "reason": "钩子本体：文件存在性，与 §9.1-10 同型"
-    },
-    {
-      "ref": "§9.3 meta",
-      "reason": "DOC/LOCALE/PROSE/SPEC 元检查：注入变异需要另一套 fixture 工厂；留给下一轮"
-    }
-  ],
+  "excluded": [],
   "boundary": "抓不到接线错、跨文件/跨版本行为；低分是结论，但不许为抬分删除位点"
 }

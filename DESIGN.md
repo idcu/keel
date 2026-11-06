@@ -2187,12 +2187,13 @@ v3.14.0 把「有哪些判据」写在 `checks-ledger.py` 的 `REGISTRY` 里，�
    - `mutants.tsv`：**生成物并入库**，列 `id / site / ref / operator / line / old / new / cases`，头部绑定 `target_sha256` 与 `manifest_sha256`。
    - `results.json`：实测结果（总数 / 杀死 / 存活 / 等价 / 豁免 / 每条判据明细 / 逐变异体证据）。
    - `exemptions.tsv`：显式豁免清单，列 `mutant / kind / reason / expires / condition`；初始只有表头。
-2. **算子（可插拔，当前 4 个）**：`remove_check`（删掉 fail/warn 发射或 case 分支）、`invert_guard`（比较/测试条件取反：`-gt↔-le`、`-eq↔-ne`、`-n↔-z`、`=`↔`!=`）、`shift_bound`（上界阈值放宽 ×2）、`relax_match`（从 grep 模式删掉版本字面量）。新增算子 = 注册函数 + 在 `sites.tsv` 引用，不改引擎。
+2. **算子（可插拔，当前 6 个）**：`remove_check`（删掉 fail/warn 发射或 case 分支）、`remove_emit`（删掉 awk 里的 `printf "❌` 发射行）、`invert_guard`（比较条件取反：`-gt↔-le`、`-eq↔-ne`、`-n↔-z`、`=`↔`!=`、`==↔!=`）、`invert_if`（Python `if` 条件取反）、`shift_bound`（上界阈值放宽 ×2）、`relax_match`（从 grep 模式删掉版本字面量）。新增算子 = 注册函数 + 在 `sites.tsv` 引用，不改引擎。
 3. **确定性与哈希**：枚举顺序 = `sites.tsv` 行序；`id = sha256(ref|site|operator|old|new)[:12]`；`manifest_sha256 = sha256(规范化行序列)`；`target_sha256` 绑定被测脚本。同一仓库版本 + 同一算子集合 → 逐字节相同的 `mutants.tsv`；`mutation.py --enumerate` 逐字节比对，漂移即红。清单可交付外人，按其 `old→new` 自行注入复算。
 4. **`ledger.tsv` v2 字段扩展**（每条判据）：`mutation_total / mutation_killed / mutation_survived / mutation_equivalent / mutation_exempt / mutation_status / mutation_evidence`。字段只从 `mutants.tsv + results.json + exemptions.tsv` 推导，**不写常量**。
-5. **口径**：`mutation_total = killed + survived + invalid`；`equivalent` **单独计数、不进得分分母**，必须在 `exemptions.tsv` 写明理由与到期日；`score_denominator = total - equivalent`。**存活且未豁免 → 门禁 rc=1**；等价/豁免到期 → rc=1；已杀却被声明等价 → rc=1；豁免不得静默消失。`mutation_status` 取 `PASS / SURVIVED / EXEMPT / INVALID / NONE`。
-6. **耗时上限**：变异执行可并行（`--jobs N`）；全量结果落 `results.json` 并进 `verify-report.json` 的 `mutation` 小节。门禁做**秒级自洽校验**（清单 ↔ 结果 ↔ 豁免 ↔ 账本），全量复算 `mutation.py --recompute --jobs N` 单独执行并打印实测耗时、并行度与清单哈希。
-7. **负控（`--negctl` 实跑三条）**：①把已杀变异体声明为等价；②把某条判据的变异体数量写成常量；③把存活报告成已杀（复算重跑后比对）。三条都必须 rc=1。
+5. **口径**：`mutation_total = killed + survived + invalid`；`equivalent` **单独计数、不进得分分母**，必须在 `exemptions.tsv` 写明理由与到期日；`score_denominator = total - equivalent`。**存活且未豁免 → 门禁 rc=1**；等价/豁免到期 → rc=1；已杀却被声明等价 → rc=1；豁免不得静默消失。`mutation_status` 取 `PASS / SURVIVED / EXEMPT / INVALID / NONE`。判据级豁免（`kind=not_mutable`，首列为判据 ID）用于确实没有可注入代码的判据，必须能对上 `criteria.tsv` 的 counted ID；有变异位点的判据不得再声明不可变异。
+   覆盖口径：`criteria.tsv` 中 **counted=yes 的 24 条**必须每条至少有 1 个位点，或在 `exemptions.tsv` 里有判据级豁免；两者都没有 → 门禁 rc=1。当前 23 条有真实位点（30 个变异体），§9.1-15（内核不实现项目扩展位）登记为 `not_mutable`，不进任何分母。
+6. **耗时上限**：变异执行可并行（`--jobs N`）；全量结果落 `results.json` 并进 `verify-report.json` 的 `mutation` 小节。门禁做**秒级自洽校验**（清单 ↔ 结果 ↔ 豁免 ↔ 账本），全量复算 `mutation.py --recompute --jobs N` 单独执行并打印实测耗时、并行度与清单哈希。v3.17.0 实测：30 个变异体，1/4/8 并行 = **284.1s / 89.7s / 78.0s**（4 并行 3.2×、8 并行 3.6×），清单 `ceb4c41a…`。靶子就是判据脚本本身，而 SPEC-DIGEST 会比对其 sha——每个变异体在临时树里先刷新自身 `manifest.tsv` 的 sha，避免另一条元检查顺手打红、把「被测判据没反应」误记成「被兜住」。
+7. **负控（`--negctl` 实跑）**：①把已杀变异体声明为等价；②把某条判据的变异体数量写成常量；③把存活报告成已杀（复算重跑后比对）；④**真实存活探测体**：取本轮 `results.json` 里真实 `survived` 的变异体，临时摘掉其 `deferred` 豁免，门禁必须红在「存活变异体未豁免」并点名该变异体 ID（无真实存活体时才退回合成存活体）。探测体不写回 `results.json`、不进正式分母。四条都必须判死。
 8. **边界**：抓不到接线错、跨文件/跨版本行为。v3.15.0 的「不进门禁」由本条取代——因为等价/豁免现在有理由、到期与机器校验；「低分是结论」仍约束**不许为抬分删除难杀变异体**（删除位点会让该判据的 `mutation_total` 变小并在账本上可见）。
 
 **两站镜像（Gitee 主 + GitHub 镜像）**：

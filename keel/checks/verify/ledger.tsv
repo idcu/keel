@@ -7,25 +7,25 @@
 §9.1-2	§9.1	fail	rule	yes	PASS	negative	4	4	CASES:04,05,06,11	-	2	2	0	0	0	PASS	286d4cd6c456:killed,1b17659a4b90:killed
 §9.1-3	§9.1	fail	rule	yes	PASS	negative	1	1	CASES:22	-	1	1	0	0	0	PASS	e5cd08908bd5:killed
 §9.1-4	§9.1	fail	rule	yes	PASS	negative	2	2	CASES:23,37	-	1	1	0	0	0	PASS	8c9bf5fe7109:killed
-§9.1-5	§9.1	fail	rule	yes	PASS	negative	1	1	CASES:24	-	0	0	0	0	0	NONE	
+§9.1-5	§9.1	fail	rule	yes	PASS	negative	1	1	CASES:24	-	1	1	0	0	0	PASS	40e83bf57e97:killed
 §9.1-6	§9.1	fail	rule	yes	PASS	negative	4	4	CASES:07,08,09,10	-	2	2	0	0	0	PASS	33dd7c187a39:killed,b4c725ca61a5:killed
-§9.1-7	§9.1	fail	rule	yes	PASS	negative	3	3	CASES:14,15,34	-	0	0	0	0	0	NONE	
-§9.1-8	§9.1	fail	rule	yes	PASS	negative	2	2	CASES:12,13	-	0	0	0	0	0	NONE	
-§9.1-9	§9.1	fail	rule	yes	PASS	negative	1	1	CASES:16	-	0	0	0	0	0	NONE	
+§9.1-7	§9.1	fail	rule	yes	PASS	negative	3	3	CASES:14,15,34	-	1	1	0	0	0	PASS	e135e0bf942b:killed
+§9.1-8	§9.1	fail	rule	yes	PASS	negative	2	2	CASES:12,13	-	1	1	0	0	0	PASS	dd8b3b73d82c:killed
+§9.1-9	§9.1	fail	rule	yes	PASS	negative	1	1	CASES:16	-	1	1	0	0	0	PASS	3e4e2a80a7f3:killed
 §9.1-10	§9.1	fail	rule	yes	PASS	negative	6	6	CASES:17,18,19,21,49,50	-	2	2	0	0	0	PASS	eb9d3da0df24:killed,ce5068be6cb6:killed
-§9.1-11	§9.1	fail	rule	yes	PASS	negative	1	1	CASES:28	-	0	0	0	0	0	NONE	
-§9.1-12	§9.1	warn	rule	yes	PASS	negative	1	1	CASES:26	-	0	0	0	0	0	NONE	
-§9.1-13	§9.1	warn	rule	yes	PASS	negative	1	1	CASES:27	-	0	0	0	0	0	NONE	
-§9.1-14	§9.1	fail	rule	yes	PASS	negative	1	1	CASES:31	-	0	0	0	0	0	NONE	
-§9.1-15	§9.1	extension	rule	yes	SKIP	none	0	0	none	扩展位（DESIGN §9.2）：内核不实现，需项目侧判据	0	0	0	0	0	NONE	
-§9.1-16	§9.1	fail	rule	yes	PASS	negative	1	1	CASES:36	-	0	0	0	0	0	NONE	
+§9.1-11	§9.1	fail	rule	yes	PASS	negative	1	1	CASES:28	-	1	1	0	0	0	PASS	66846108164c:killed
+§9.1-12	§9.1	warn	rule	yes	PASS	negative	1	1	CASES:26	-	1	1	0	0	0	PASS	252874e88fb3:killed
+§9.1-13	§9.1	warn	rule	yes	PASS	negative	1	1	CASES:27	-	1	1	0	0	0	PASS	923b083eb308:killed
+§9.1-14	§9.1	fail	rule	yes	PASS	negative	1	1	CASES:31	-	1	1	0	0	0	PASS	57e28306f19e:killed
+§9.1-15	§9.1	extension	rule	yes	SKIP	none	0	0	none	扩展位（DESIGN §9.2）：内核不实现，需项目侧判据	0	0	0	0	1	EXEMPT	criterion-exempt:§9.1-15
+§9.1-16	§9.1	fail	rule	yes	PASS	negative	1	1	CASES:36	-	1	1	0	0	0	PASS	3044836a1697:killed
 §9.1-17	§9.1	fail	rule	yes	PASS	negative	5	3	CASES:39,40,41,42,52	-	2	2	0	0	0	PASS	9e63e80030d0:killed,9a34029dc12b:killed
 §9.1-18	§9.1	fail	rule	yes	PASS	negative	2	2	CASES:43,44	-	1	1	0	0	0	PASS	67b3c65a7032:killed
 §9.1-19	§9.1	fail	rule	yes	PASS	negative	4	4	CASES:45,46,47,48	-	2	2	0	0	0	PASS	c11a5d0d7f68:killed,c09249d0b26d:killed
-§9.3-DOC	§9.3	fail	meta	yes	PASS	negative	1	1	META:§9.3-DOC	-	0	0	0	0	0	NONE	
-§9.3-LOCALE	§9.3	fail	meta	yes	PASS	negative	1	1	META:§9.3-LOCALE	-	0	0	0	0	0	NONE	
-§9.3-PROSE	§9.3	fail	meta	yes	PASS	negative	1	1	META:§9.3-PROSE	-	0	0	0	0	0	NONE	
-§9.3-SPEC	§9.3	fail	meta	yes	PASS	negative	1	1	META:§9.3-SPEC	-	0	0	0	0	0	NONE	
-§9.3-BUDGET	§9.3	fail	aux	yes	PASS	negative	1	1	CASES:20	-	0	0	0	0	0	NONE	
+§9.3-DOC	§9.3	fail	meta	yes	PASS	negative	1	1	META:§9.3-DOC	-	1	1	0	0	0	PASS	34c12296b00c:killed
+§9.3-LOCALE	§9.3	fail	meta	yes	PASS	negative	1	1	META:§9.3-LOCALE	-	1	0	1	0	1	EXEMPT	cee6a6d6f577:survived
+§9.3-PROSE	§9.3	fail	meta	yes	PASS	negative	1	1	META:§9.3-PROSE	-	1	1	0	0	0	PASS	dc2fd568e302:killed
+§9.3-SPEC	§9.3	fail	meta	yes	PASS	negative	1	1	META:§9.3-SPEC	-	1	0	1	0	1	EXEMPT	e5309688d1aa:survived
+§9.3-BUDGET	§9.3	fail	aux	yes	PASS	negative	1	1	CASES:20	-	1	1	0	0	0	PASS	97d1d961067c:killed
 NOISE	§9.3	meta	meta	no	EXCLUDED	excluded	0	0	none	不计入分母：无独立判死用例（进自测分母）	0	0	0	0	0	NONE	
 INVOKE	§9.3	meta	meta	no	EXCLUDED	excluded	0	0	none	不计入分母：无独立判死用例（进自测分母）	0	0	0	0	0	NONE	

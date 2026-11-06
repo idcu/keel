@@ -1,4 +1,4 @@
-# keel-mutants v1 target=checks/keel-lint.sh@61eacb5bbb4c682f810ffa2a8ecb2c22bdb6d0e488560e857ea99a0c6d6f3057 manifest_sha256=239400ced467f3c5c241a996f84b642c6f623ee69e8b4ab23448210bec593524
+# keel-mutants v1 target=checks/keel-lint.sh@61eacb5bbb4c682f810ffa2a8ecb2c22bdb6d0e488560e857ea99a0c6d6f3057,checks/test-lint.py@92faf8c70e304a95c3dada5f2c1b64d0988a0aa58941be2930145c418661850d manifest_sha256=ceb4c41ac3b64920dafb65383cbf4fd73cbefaca7f9b9eacbf310c3a2825e25b
 5438631148d3	S01	§9.1-1	remove_check	350	    [ "$n" -gt "$lim" ]  && fail_msg "超行数 ${n}>${lim}: $rel"	    :	00,01	checks/keel-lint.sh
 3d00c421ffcb	S02	§9.1-1	shift_bound	350	    [ "$n" -gt "$lim" ]  && fail_msg "超行数 ${n}>${lim}: $rel"	    [ "$n" -gt "$((lim * 2))" ]  && fail_msg "超行数 ${n}>${lim}: $rel"	00,01	checks/keel-lint.sh
 4a50b29afb2f	S03	§9.1-1	remove_check	351	    [ "$b" -gt "$blim" ] && fail_msg "超字节 ${b}>${blim}: $rel"	    :	00,02	checks/keel-lint.sh
@@ -15,3 +15,17 @@ ce5068be6cb6	S11	§9.1-10	remove_check	596	[ "$anchor_ok" -eq 1 ] || fail_msg "�
 67b3c65a7032	S14	§9.1-18	invert_guard	892	if [ -n "$_crlf" ]; then	if [ -z "$_crlf" ]; then	00,43	checks/keel-lint.sh
 c11a5d0d7f68	S15	§9.1-19	remove_check	936	      cp) fail_msg "未受控的直写：裸 cp/mv/install（应走 atomic_write，或标 # keel-write:ok）: checks/keel-upgrade.sh:${_wn}" ;;	      cp) ;;	00,45	checks/keel-lint.sh
 c09249d0b26d	S16	§9.1-19	remove_check	952	      fail_msg "成功信息早于终态校验（final_verify 应在「升级完成」前 8 行内）: checks/keel-upgrade.sh:${_wok}"	      :	00,48	checks/keel-lint.sh
+40e83bf57e97	S17	§9.1-5	remove_emit	740	      for (i = 1; i <= 3; i++) if (!seen[i]) printf "❌ 坑条目缺失【%s】: %s\n", h[i], r	      # removed	00,24	checks/keel-lint.sh
+e135e0bf942b	S18	§9.1-7	remove_emit	526	    $0 !~ /^\|/ { printf "❌ 域索引含非表格正文: %s 第%d行: %s\n", R, NR, substr($0,1,30) }	    # removed	00,14	checks/keel-lint.sh
+dd8b3b73d82c	S19	§9.1-8	remove_check	512	  case "$base" in *[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*) fail_msg "热区文件名含日期: $rel" ;; esac	  :	00,12,13	checks/keel-lint.sh
+3e4e2a80a7f3	S20	§9.1-9	remove_check	580	    fail_msg "引用存在环（§3.1 禁止循环引用）: ${cyc:-拓扑排序后仍有节点未消解}"	    :	00,16	checks/keel-lint.sh
+66846108164c	S21	§9.1-11	remove_check	805	    if [ -z "$S12_made" ]; then fail_msg "例外决策缺 created 字段: ${S12_CUR#"$KEEL_DIR"/}"	    if [ -z "$S12_made" ]; then :	00,28	checks/keel-lint.sh
+252874e88fb3	S22	§9.1-12	remove_check	693	      [ "$age" -gt "$STALE_DAYS" ] && warn_msg "stale(${age}d): $rel"	      :	00,26	checks/keel-lint.sh
+923b083eb308	S23	§9.1-13	remove_check	763	        warn_msg "待蒸馏（triggers=${t} ≥ ${DISTILL_AT}）: $rel"	        :	00,27	checks/keel-lint.sh
+57e28306f19e	S24	§9.1-14	remove_check	811	    [ -e "$sbdir/$S12_sb" ] || fail_msg "superseded-by 指向不存在的文件（${S12_sb}）: ${S12_CUR#"$KEEL_DIR"/}"	    :	00,31	checks/keel-lint.sh
+3044836a1697	S25	§9.1-16	remove_check	833	  if [ ! -f "$hf" ]; then fail_msg "缺闭环钩子本体: checks/hooks/$h"	  if [ ! -f "$hf" ]; then :	00,36	checks/keel-lint.sh
+97d1d961067c	S26	§9.3-BUDGET	remove_check	44	  fail_msg "缺预算真源 checks/budget.env（§9.3），已退回内置默认值"	  :	00,20	checks/keel-lint.sh
+34c12296b00c	S27	§9.3-DOC	invert_guard	664	            if block.rstrip("\n") == shipped.rstrip("\n"):	            if block.rstrip("\n") != shipped.rstrip("\n"):	00,§9.3-DOC	checks/test-lint.py
+cee6a6d6f577	S28	§9.3-LOCALE	invert_if	701	    if leaks:	    if not leaks:	00,§9.3-LOCALE	checks/test-lint.py
+dc2fd568e302	S29	§9.3-PROSE	invert_guard	787	                    if m.group(1) != ver:	                    if m.group(1) == ver:	00,§9.3-PROSE	checks/test-lint.py
+e5309688d1aa	S30	§9.3-SPEC	invert_guard	641	        elif want[rel] != _sha256(path):	        elif want[rel] == _sha256(path):	00,§9.3-SPEC	checks/test-lint.py

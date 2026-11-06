@@ -1,3 +1,7 @@
 # keel-mutation-exemptions v1 —— 等价/暂不可杀的显式豁免（DESIGN §12.3）
 # 列：mutant<TAB>kind(equivalent|deferred)<TAB>reason<TAB>expires(YYYY-MM-DD)<TAB>condition
 # equivalent 单独计数、不进得分分母；deferred 仍计入存活但允许过门禁。到期即红，不得静默删除。
+# 首列可以是变异体 id（12 hex）或判据 ID（§...）；判据级 kind 只能是 not_mutable。
+§9.1-15	not_mutable	内核不实现项目扩展位（DESIGN §9.2），没有可注入的判据代码；替换为契约漂移/术语混用的项目侧判据时移除	2027-06-30	项目在 keel/checks/ 落地契约漂移判据后，把该条改为真实位点
+cee6a6d6f577	deferred	§9.3-LOCALE 反转结构哨兵：m02 fixture 自带泄漏，行为哨兵先返回 False，目标用例仍 PASS；无泄漏路径因 leaks[0] 越界抛 IndexError（rc=1 但无 [FAIL]），判据实际已退化而测试未覆盖该路径	2026-12-31	m02 增加「无泄漏脚本不得报错」用例后复测；能判死则删此条，否则改位点
+e5309688d1aa	deferred	§9.3-SPEC 反转 sha 比较：m04 只断言返回 False，未变文件误报也满足，故目标用例仍 PASS；漏报（被篡改文件不点名）未被断言，门禁红仅来自外层 SPEC-DIGEST	2026-12-31	m04 增加「报错必须点名被篡改文件、且不得点名未变文件」断言后复测

@@ -18,3 +18,17 @@ S13	§9.1-17	checks/keel-lint.sh	          grep -qE "^## ${_v} —" "$_cl" \	rel
 S14	§9.1-18	checks/keel-lint.sh	if [ -n "$_crlf" ]; then	invert_guard	00,43
 S15	§9.1-19	checks/keel-lint.sh	      cp) fail_msg "未受控的直写：裸 cp/mv/install（应走 atomic_write，或标 # keel-write:ok）: checks/keel-upgrade.sh:${_wn}" ;;	remove_check	00,45
 S16	§9.1-19	checks/keel-lint.sh	      fail_msg "成功信息早于终态校验（final_verify 应在「升级完成」前 8 行内）: checks/keel-upgrade.sh:${_wok}"	remove_check	00,48
+S17	§9.1-5	checks/keel-lint.sh	      for (i = 1; i <= 3; i++) if (!seen[i]) printf "❌ 坑条目缺失【%s】: %s\n", h[i], r	remove_emit	00,24
+S18	§9.1-7	checks/keel-lint.sh	    $0 !~ /^\|/ { printf "❌ 域索引含非表格正文: %s 第%d行: %s\n", R, NR, substr($0,1,30) }	remove_emit	00,14
+S19	§9.1-8	checks/keel-lint.sh	  case "$base" in *[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*) fail_msg "热区文件名含日期: $rel" ;; esac	remove_check	00,12,13
+S20	§9.1-9	checks/keel-lint.sh	    fail_msg "引用存在环（§3.1 禁止循环引用）: ${cyc:-拓扑排序后仍有节点未消解}"	remove_check	00,16
+S21	§9.1-11	checks/keel-lint.sh	    if [ -z "$S12_made" ]; then fail_msg "例外决策缺 created 字段: ${S12_CUR#"$KEEL_DIR"/}"	remove_check	00,28
+S22	§9.1-12	checks/keel-lint.sh	      [ "$age" -gt "$STALE_DAYS" ] && warn_msg "stale(${age}d): $rel"	remove_check	00,26
+S23	§9.1-13	checks/keel-lint.sh	        warn_msg "待蒸馏（triggers=${t} ≥ ${DISTILL_AT}）: $rel"	remove_check	00,27
+S24	§9.1-14	checks/keel-lint.sh	    [ -e "$sbdir/$S12_sb" ] || fail_msg "superseded-by 指向不存在的文件（${S12_sb}）: ${S12_CUR#"$KEEL_DIR"/}"	remove_check	00,31
+S25	§9.1-16	checks/keel-lint.sh	  if [ ! -f "$hf" ]; then fail_msg "缺闭环钩子本体: checks/hooks/$h"	remove_check	00,36
+S26	§9.3-BUDGET	checks/keel-lint.sh	  fail_msg "缺预算真源 checks/budget.env（§9.3），已退回内置默认值"	remove_check	00,20
+S27	§9.3-DOC	checks/test-lint.py	            if block.rstrip("\n") == shipped.rstrip("\n"):	invert_guard	00,§9.3-DOC
+S28	§9.3-LOCALE	checks/test-lint.py	    if leaks:	invert_if	00,§9.3-LOCALE
+S29	§9.3-PROSE	checks/test-lint.py	                    if m.group(1) != ver:	invert_guard	00,§9.3-PROSE
+S30	§9.3-SPEC	checks/test-lint.py	        elif want[rel] != _sha256(path):	invert_guard	00,§9.3-SPEC
