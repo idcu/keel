@@ -16,22 +16,23 @@ keywords: [坑库, 索引]
 | JSON空值n/a解析失败 | meta | P2 | [handwritten-json-nan-placeholder](meta/handwritten-json-nan-placeholder.md) |
 | 两仓全绿submodule有+ | meta | P1 | [submodule-pointer](meta/submodule-pointer-drift-not-machine-checked.md) |
 | 冷区报死链 | meta | P3 | [cold-zone](meta/cold-zone-link-prefix.md) |
-| 举例链接判死链 | meta | P3 | [link-example-real-link](archive/link-syntax-example-becomes-real-link.md) |
+| 举例判死链 | meta | P3 | [link-example-real-link](archive/link-syntax-example-becomes-real-link.md) |
 | 新clone即红1211>1200 | meta | P0 | [byte-budget-assumes-lf](meta/byte-budget-assumes-lf.md) |
 | worktree误报27孤儿 | meta | P1 | [worktree-eol](meta/worktree-eol-differs-from-main.md) |
-| test-lint全FAIL无输出 | meta | P0 | [harness-invokes-bare-bash](meta/harness-invokes-bare-bash.md) |
-| check-mcp rc=7假绿 | meta | P3 | [check-mcp-path](meta/check-mcp-config-only-proves-path.md) |
+| test-lint全FAIL | meta | P0 | [harness-invokes-bare-bash](meta/harness-invokes-bare-bash.md) |
+| check-mcp假绿 | meta | P3 | [check-mcp-path](meta/check-mcp-config-only-proves-path.md) |
 | stderr 白名单堆积 | meta | P3 | [safe-delete-shim-blocks-cleanup](archive/safe-delete-shim-blocks-cleanup.md) |
-| load-estimate超限改不动 | meta | P2 | [broad-keyword-false-overrun](meta/broad-keyword-false-overrun.md) |
-| 批量化误报39漏真坑 | meta | P1 | [awk-enfile-ignores-skip-state](meta/awk-enfile-ignores-skip-state.md) |
+| load估算超限 | meta | P2 | [broad-keyword-false-overrun](meta/broad-keyword-false-overrun.md) |
+| 批量化漏真坑 | meta | P1 | [awk-enfile-ignores-skip-state](meta/awk-enfile-ignores-skip-state.md) |
 | release推分支漏tag | meta | P1 | [release-pushes-branch-not-tag](meta/release-pushes-branch-not-tag.md) |
 | keel-lite 6孤儿exit1 | meta | P1 | [lite-strips-index-before-delete](meta/lite-strips-index-before-delete.md) |
 | macOS awk误报孤儿丢末件 | meta | P0 | [awk-gawk-gaps](meta/awk-gawk-gaps.md) |
-| bash3 UTF-8吞字节/glob误判(蒸馏) | meta | P1 | [bash3-utf8-varname-eats-byte](meta/bash3-utf8-varname-eats-byte.md) |
-| 升级漏文件且无检查会报 | meta | P1 | [dist-drift](meta/distribution-list-drift.md) |
-| 升级磁盘满假成功(蒸馏) | meta | P0 | [upgrade-silent-write-failure](archive/upgrade-silent-write-failure.md) |
-| 清单吞打印SKIP | meta | P1 | [report-parser-swallows-skip](meta/report-parser-swallows-skip.md) |
-| null仍PASS | meta | P0 | [null-sha](validator-passes-null-sha.md) |
+| bash3 UTF-8吞字节/glob误判 | meta | P1 | [bash3-utf8-varname-eats-byte](meta/bash3-utf8-varname-eats-byte.md) |
+| 升级漏文件会报 | meta | P1 | [dist-drift](meta/distribution-list-drift.md) |
+| 升级磁盘满假成功 | meta | P0 | [upgrade-silent-write-failure](archive/upgrade-silent-write-failure.md) |
+| 清单吞SKIP | meta | P1 | [report-parser-swallows-skip](meta/report-parser-swallows-skip.md) |
+| null PASS | meta | P0 | [null-sha](validator-passes-null-sha.md) |
 | 采用方全绿 | meta | P0 | [adopter-green](adopter-all-green.md) |
 | 冷区/缺副本静默PASS | meta | P0 | [cold-zone](cold-zone-not-exempt.md) |
 | 账本自洽少判据 | meta | P0 | [ledger](ledger-self-consistent.md) |
+| 变异清单手写漂移 | meta | P0 | [mutation](mutation-catalog-drift.md) |

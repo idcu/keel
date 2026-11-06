@@ -1,0 +1,3 @@
+# keel-mutation-exemptions v1 —— 等价/暂不可杀的显式豁免（DESIGN §12.3）
+# 列：mutant<TAB>kind(equivalent|deferred)<TAB>reason<TAB>expires(YYYY-MM-DD)<TAB>condition
+# equivalent 单独计数、不进得分分母；deferred 仍计入存活但允许过门禁。到期即红，不得静默删除。

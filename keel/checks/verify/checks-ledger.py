@@ -40,6 +40,37 @@ DEFAULT_CASES = os.path.join(KEEL, "checks", "test-lint.py")
 DEFAULT_CRITERIA = os.path.join(HERE, "criteria.tsv")
 DEFAULT_LEDGER = os.path.join(HERE, "ledger.tsv")
 DEFAULT_DESIGN = os.path.join(REPO, "DESIGN.md")
+DEFAULT_MUTANTS = os.path.join(KEEL, "checks", "mutation", "mutants.tsv")
+DEFAULT_RESULTS = os.path.join(KEEL, "checks", "mutation", "results.json")
+DEFAULT_EXEMPTIONS = os.path.join(KEEL, "checks", "mutation", "exemptions.tsv")
+
+# 变异字段的默认值：没有该判据的变异体时也必须有确定值，账本才能逐字节复算。
+MUTATION_ZERO = {"total": 0, "killed": 0, "survived": 0, "equivalent": 0,
+                 "exempt": 0, "invalid": 0, "status": "NONE", "evidence": ""}
+
+
+def load_mutation(mutants_path=DEFAULT_MUTANTS, results_path=DEFAULT_RESULTS,
+                  exemptions_path=DEFAULT_EXEMPTIONS):
+    """从变异清单/结果/豁免推导每条判据的字段；任何漂移都进 errors，不让账本自说自话。"""
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "keel_mutation_%s" % uuid.uuid4().hex,
+            os.path.join(KEEL, "checks", "mutation", "mutation.py"))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        enum = mod.enumerate_mutants(mod.parse_sites())
+        muts, merrs = mod.load_mutants(mutants_path)
+        ex, exerrs = mod.load_exemptions(exemptions_path)
+        res, rerrs = mod.load_results(results_path)
+        errors = enum["errors"] + merrs + exerrs + rerrs
+        per = {}
+        if muts and ex and res and not errors:
+            per, _totals, serrs = mod.summarize(res.get("mutants", []), muts, ex)
+            errors = errors + serrs + mod.verify_data(enum, muts, ex, res)
+        return {"per": per, "errors": errors,
+                "manifest_sha256": enum.get("manifest_sha256")}
+    except Exception as e:   # 变异引擎不可用时，账本不能假装有数据
+        return {"per": {}, "errors": ["变异数据不可用：%s" % e], "manifest_sha256": None}
 
 # test-lint 历史上用 "§9.3" 指预算检查（用例 20），保留别名，不要求改用例编号。
 EXTRA_ALIAS = {"§9.3": "§9.3-BUDGET"}
@@ -147,9 +178,12 @@ def _validate_criteria(criteria):
     return errors
 
 
-def build(criteria, cases, design_text=None, meta_cases=None):
+def build(criteria, cases, design_text=None, meta_cases=None, mutation=None):
     meta_cases = meta_cases or []
     errors = _validate_criteria(criteria)
+    if mutation is not None:
+        errors.extend(mutation.get("errors") or [])
+    per_mutation = (mutation or {}).get("per") or {}
 
     known = {r["id"] for r in criteria} | set(EXTRA_ALIAS)
     for ref in sorted({c[2] for c in cases}):
@@ -203,6 +237,7 @@ def build(criteria, cases, design_text=None, meta_cases=None):
         else:
             reason = "无用例"
 
+        m = per_mutation.get(r["id"]) or MUTATION_ZERO
         rows.append({
             "id": r["id"], "section": r["section"], "level": r["level"],
             "kind": r["kind"], "counted": r["counted"], "title": r["title"],
@@ -212,6 +247,12 @@ def build(criteria, cases, design_text=None, meta_cases=None):
             "warn_cases": sum(1 for c in cs if classify(c) == "warn"),
             "baseline_cases": sum(1 for c in cs if classify(c) == "baseline"),
             "evidence": evidence, "reason": reason,
+            "mutation_total": m["total"], "mutation_killed": m["killed"],
+            "mutation_survived": m["survived"],
+            "mutation_equivalent": m["equivalent"],
+            "mutation_exempt": m["exempt"],
+            "mutation_status": m["status"],
+            "mutation_evidence": m["evidence"],
         })
 
     counted = [r for r in rows if r["counted"] == "yes"]
@@ -284,7 +325,7 @@ def build(criteria, cases, design_text=None, meta_cases=None):
         })
 
     return {
-        "schema": 1,
+        "schema": 2,
         "generated_at": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
         "scope": {
             "numbered_ids": d1["denominator_ids"],
@@ -322,21 +363,36 @@ def build(criteria, cases, design_text=None, meta_cases=None):
         "meta": meta,
         "out_of_scope": ["test-upgrade", "test-faults", "matrix"],
         "errors": errors,
+        "mutation": {
+            "manifest_sha256": (mutation or {}).get("manifest_sha256"),
+            "totals": {
+                "mutants": sum(r["mutation_total"] for r in rows),
+                "killed": sum(r["mutation_killed"] for r in rows),
+                "survived": sum(r["mutation_survived"] for r in rows),
+                "equivalent": sum(r["mutation_equivalent"] for r in rows),
+                "exempt": sum(r["mutation_exempt"] for r in rows),
+            },
+        },
     }
 
 
 def serialize_ledger(ledger):
     """账本的唯一序列化形式：无时间戳、无环境信息，逐字节可复算。"""
     lines = [
-        "# keel-criteria-ledger v1",
-        "# 口径：DESIGN §12.3「判据账本口径」；生成：checks/verify/checks-ledger.py --regen",
+        "# keel-criteria-ledger v2",
+        "# 口径：DESIGN §12.3「判据账本口径 / 判据变异引擎」；生成：checks/verify/checks-ledger.py --regen",
         "# 分母由本账本 counted=yes 的行数推导，不写常量；复算：checks-ledger.py --recompute",
-        "# 列：id<TAB>section<TAB>level<TAB>kind<TAB>counted<TAB>status<TAB>coverage<TAB>cases<TAB>negative_cases<TAB>evidence<TAB>reason",
+        "# 变异字段由 mutation/{mutants.tsv,results.json,exemptions.tsv} 推导，不写常量；校验：mutation.py --verify",
+        "# 列：id<TAB>section<TAB>level<TAB>kind<TAB>counted<TAB>status<TAB>coverage<TAB>cases<TAB>negative_cases<TAB>evidence<TAB>reason<TAB>"
+        "mutation_total<TAB>mutation_killed<TAB>mutation_survived<TAB>mutation_equivalent<TAB>mutation_exempt<TAB>mutation_status<TAB>mutation_evidence",
     ]
     for r in ledger["all_rows"]:
         lines.append("\t".join(str(r[k]) for k in
                                ("id", "section", "level", "kind", "counted", "status",
-                                "coverage", "cases", "negative_cases", "evidence", "reason")))
+                                "coverage", "cases", "negative_cases", "evidence", "reason",
+                                "mutation_total", "mutation_killed", "mutation_survived",
+                                "mutation_equivalent", "mutation_exempt", "mutation_status",
+                                "mutation_evidence")))
     return "\n".join(lines) + "\n"
 
 
@@ -364,6 +420,15 @@ def check_ledger(ledger, ledger_path):
         elif declared != real:
             errors.append("账本写死分母 %s=%d，清单推导为 %d（常量分母不许篡改）"
                           % (level, declared, real))
+    # 变异体数量同样不许写死：生成物只允许逐行计数。
+    for m in re.finditer(r"^#\s*mutation_total\s+(\S+)\s*=\s*(\d+)\s*$", actual, re.M):
+        cid, declared = m.group(1), int(m.group(2))
+        row = next((r for r in ledger["all_rows"] if r["id"] == cid), None)
+        if row is None:
+            errors.append("账本声明了未知判据的变异数：%s" % cid)
+        elif declared != row["mutation_total"]:
+            errors.append("账本写死 %s 的变异数=%d，清单推导为 %d（常量不许篡改）"
+                          % (cid, declared, row["mutation_total"]))
     return expected, errors
 
 
@@ -394,6 +459,12 @@ def summary_of(ledger):
         % (t["negative"], t["positive_only"], t["none"]),
         "  - 状态：PASS %d · SKIP %d · EXCLUDED %d（分母只数 counted=yes）"
         % (t["status"]["PASS"], t["status"]["SKIP"], t["status"]["EXCLUDED"]),
+        "  - 变异：%d 个 / 杀 %d / 存活 %d / 等价 %d / 豁免 %d（分母 = 总数-等价）"
+        % (sum(r["mutation_total"] for r in ledger["all_rows"]),
+           sum(r["mutation_killed"] for r in ledger["all_rows"]),
+           sum(r["mutation_survived"] for r in ledger["all_rows"]),
+           sum(r["mutation_equivalent"] for r in ledger["all_rows"]),
+           sum(r["mutation_exempt"] for r in ledger["all_rows"])),
     ]
     if zeros:
         lines.append("  - 未覆盖（SKIP）：%s"
@@ -526,7 +597,8 @@ def selftest(criteria_path, cases_path):
     criteria = load_criteria(criteria_path)
     base, meta = load_cases(cases_path)
     design = _load_design(DEFAULT_DESIGN)
-    led = build(criteria, base, design_text=design, meta_cases=meta)
+    mutation = load_mutation()
+    led = build(criteria, base, design_text=design, meta_cases=meta, mutation=mutation)
     total += 1
     good += _run_fixture("真实清单：§9.1 连续、全部 counted=yes、无结构错误",
                          not led["errors"]
@@ -667,6 +739,13 @@ def _print_recompute(ledger, criteria_path, ledger_path, expected, errs):
         print("DESIGN §9.1 对齐：%d 行，已校验" % ledger["design_check"]["rows"])
     else:
         print("DESIGN §9.1 对齐：SKIP（%s）" % ledger["design_check"]["reason"])
+    print("变异账本：%d 个 / 杀 %d / 存活 %d / 等价 %d / 豁免 %d（manifest %s）"
+          % (sum(r["mutation_total"] for r in ledger["all_rows"]),
+             sum(r["mutation_killed"] for r in ledger["all_rows"]),
+             sum(r["mutation_survived"] for r in ledger["all_rows"]),
+             sum(r["mutation_equivalent"] for r in ledger["all_rows"]),
+             sum(r["mutation_exempt"] for r in ledger["all_rows"]),
+             (ledger.get("mutation") or {}).get("manifest_sha256")))
     if errs:
         for e in errs:
             print("❌ " + e)
@@ -684,6 +763,9 @@ def main():
     ap.add_argument("--cases", default=DEFAULT_CASES)
     ap.add_argument("--criteria", default=DEFAULT_CRITERIA)
     ap.add_argument("--ledger", default=DEFAULT_LEDGER)
+    ap.add_argument("--mutants", default=DEFAULT_MUTANTS)
+    ap.add_argument("--results", default=DEFAULT_RESULTS)
+    ap.add_argument("--exemptions", default=DEFAULT_EXEMPTIONS)
     ap.add_argument("--design", default=None)
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--recompute", action="store_true")
@@ -699,11 +781,13 @@ def main():
 
     criteria = load_criteria(a.criteria)
     cases, meta_cases = load_cases(a.cases)
+    mutation = load_mutation(a.mutants, a.results, a.exemptions)
     design_path = a.design
     if design_path is None and os.path.exists(DEFAULT_DESIGN):
         design_path = DEFAULT_DESIGN
     design = _load_design(design_path)
-    ledger = build(criteria, cases, design_text=design, meta_cases=meta_cases)
+    ledger = build(criteria, cases, design_text=design, meta_cases=meta_cases,
+                   mutation=mutation)
     if design_path:
         ledger["design_check"]["path"] = design_path
 

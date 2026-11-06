@@ -408,9 +408,8 @@ def main():
                  t["with_meta"]["negative"], t["with_meta"]["denominator"],
                  t["negative"], t["numbered"], ledger_duration))
 
-    # 变异测试试点（§9.1）：结果进清单，但**不进门禁**——低分是结论，不是失败。
-    # 若把「有变异体存活」判成 FAIL，就等于逼下一轮删掉难杀的变异体来抬分。
-    # 只在完整清单（含 wiring）里跑；`--suites lint` 这类子集不背这 1 分钟。
+    # 判据变异（§12.3）：存活体必须让门禁红；等价/暂不可杀走显式豁免（理由 + 到期）。
+    # 只在完整清单（含 wiring）里跑，避免 `--suites lint` 这类子集背全量耗时。
     mutation = None
     if "wiring" in suites:
         fd, mpath = tempfile.mkstemp(prefix="keel-mutation-", suffix=".json")
@@ -430,14 +429,26 @@ def main():
             "cases": 1, "passed": 0, "failed": 1, "skipped": 0,
             "duration_s": round(time.time() - mt0, 1),
         })
-        print("[FAIL] mutation        变异试点未产出可解析的 JSON（见上方 ❌）")
+        print("[FAIL] mutation        变异引擎未产出可解析的 JSON（见上方 ❌）")
     elif "wiring" in suites:
         mt = mutation["totals"]
-        print("[INFO] %-16s %d/%d 被杀 · 存活 %d · %.1fs（不计门禁）"
-              % ("mutation", mt["killed"], mt["mutants"], mt["survived"],
-                 mutation["duration_s"]))
+        gating = mrc != 0
+        denom = mt.get("score_denominator", mt["mutants"])
+        eq = mt.get("equivalent", 0)
+        ex = mt.get("exempt", 0)
+        rows.append({
+            "name": "mutation", "status": "FAIL" if gating else "PASS",
+            "skip_reason": None, "cases": mt["mutants"],
+            "passed": mt["killed"] if not gating else 0,
+            "failed": 0 if not gating else max(1, mt["survived"] - eq - ex),
+            "skipped": 0, "duration_s": round(time.time() - mt0, 1),
+        })
+        print("[%s] %-16s %d/%d 被杀 · 存活 %d · 等价 %d · 豁免 %d · %.1fs（门禁）"
+              % ("PASS" if not gating else "FAIL", "mutation",
+                 mt["killed"], denom, mt["survived"],
+                 eq, ex, mutation["duration_s"]))
         if mrc == 2:
-            print("      ⚠️  变异试点基线不绿（结论不可用）")
+            print("      ⚠️  变异基线不绿或环境错误（rc=2）")
 
     cells = [c for r in rows if "cells" in r for c in r["cells"]]
     total = {
@@ -486,8 +497,10 @@ def main():
                  wt["cases"], "、".join(wt["zero_ids"]) or "无"))
     if mutation:
         mt = mutation["totals"]
-        print("   变异试点：%d/%d 被杀（%.1f%%）· 存活 %d · 不计门禁（低分是结论）"
-              % (mt["killed"], mt["mutants"], mt["score_pct"], mt["survived"]))
+        print("   判据变异：%d/%d 被杀（%.1f%%）· 存活 %d · 等价 %d · 豁免 %d（存活未豁免即红）"
+              % (mt["killed"], mt.get("score_denominator", mt["mutants"]),
+                 mt["score_pct"], mt["survived"], mt.get("equivalent", 0),
+                 mt.get("exempt", 0)))
     if ledger:
         t = ledger["totals"]
         zeros = [r["id"] for r in ledger["checks"] + ledger.get("extras", [])

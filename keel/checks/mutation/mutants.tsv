@@ -1,4 +1,4 @@
-# keel-mutants v1 target=checks/keel-lint.sh target_sha256=61eacb5bbb4c682f810ffa2a8ecb2c22bdb6d0e488560e857ea99a0c6d6f3057 manifest_sha256=239400ced467f3c5c241a996f84b642c6f623ee69e8b4ab23448210bec593524
+# keel-mutants v1 target=checks/keel-lint.sh@61eacb5bbb4c682f810ffa2a8ecb2c22bdb6d0e488560e857ea99a0c6d6f3057 manifest_sha256=239400ced467f3c5c241a996f84b642c6f623ee69e8b4ab23448210bec593524
 5438631148d3	S01	§9.1-1	remove_check	350	    [ "$n" -gt "$lim" ]  && fail_msg "超行数 ${n}>${lim}: $rel"	    :	00,01	checks/keel-lint.sh
 3d00c421ffcb	S02	§9.1-1	shift_bound	350	    [ "$n" -gt "$lim" ]  && fail_msg "超行数 ${n}>${lim}: $rel"	    [ "$n" -gt "$((lim * 2))" ]  && fail_msg "超行数 ${n}>${lim}: $rel"	00,01	checks/keel-lint.sh
 4a50b29afb2f	S03	§9.1-1	remove_check	351	    [ "$b" -gt "$blim" ] && fail_msg "超字节 ${b}>${blim}: $rel"	    :	00,02	checks/keel-lint.sh
