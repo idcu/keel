@@ -1,0 +1,17 @@
+# keel-mutants v1 target=checks/keel-lint.sh target_sha256=61eacb5bbb4c682f810ffa2a8ecb2c22bdb6d0e488560e857ea99a0c6d6f3057 manifest_sha256=239400ced467f3c5c241a996f84b642c6f623ee69e8b4ab23448210bec593524
+5438631148d3	S01	§9.1-1	remove_check	350	    [ "$n" -gt "$lim" ]  && fail_msg "超行数 ${n}>${lim}: $rel"	    :	00,01	checks/keel-lint.sh
+3d00c421ffcb	S02	§9.1-1	shift_bound	350	    [ "$n" -gt "$lim" ]  && fail_msg "超行数 ${n}>${lim}: $rel"	    [ "$n" -gt "$((lim * 2))" ]  && fail_msg "超行数 ${n}>${lim}: $rel"	00,01	checks/keel-lint.sh
+4a50b29afb2f	S03	§9.1-1	remove_check	351	    [ "$b" -gt "$blim" ] && fail_msg "超字节 ${b}>${blim}: $rel"	    :	00,02	checks/keel-lint.sh
+286d4cd6c456	S04	§9.1-2	shift_bound	401	  [ "$nl" -gt 10 ] && fail_msg "frontmatter 超行数 ${nl}>10: $REL"	  [ "$nl" -gt 20 ] && fail_msg "frontmatter 超行数 ${nl}>10: $REL"	00,04	checks/keel-lint.sh
+1b17659a4b90	S05	§9.1-2	remove_check	406	  [ -n "$S2_hkw" ] || fail_msg "frontmatter 缺 keywords: $REL"	  :	00,06	checks/keel-lint.sh
+e5cd08908bd5	S06	§9.1-3	remove_check	629	    [ -e "$dir/$t" ] || echo "❌ 死链: $t  (见 ${f#"$KEEL_DIR"/})"	    :	00,22	checks/keel-lint.sh
+8c9bf5fe7109	S07	§9.1-4	remove_check	676	  grep -qxF "$f" "$refd" || fail_msg "孤儿（未被任何热区文档链接引用）: ${f#"$KEEL_DIR"/}"	  :	00,23,37	checks/keel-lint.sh
+33dd7c187a39	S08	§9.1-6	remove_check	463	    *) fail_msg "status 值域非法（${_s3_st}）: $rel" ;;	    *) ;;	00,07	checks/keel-lint.sh
+b4c725ca61a5	S09	§9.1-6	remove_check	471	  case "${_s3_kw:-}" in ""|"[]"|"[ ]") fail_msg "keywords 为空: $rel" ;; esac	  :	00,09	checks/keel-lint.sh
+eb9d3da0df24	S10	§9.1-10	remove_check	586	  [ -f "$KEEL_DIR/$need" ] || fail_msg "缺必读文件: $need"	  :	00,17,49,50	checks/keel-lint.sh
+ce5068be6cb6	S11	§9.1-10	remove_check	596	[ "$anchor_ok" -eq 1 ] || fail_msg "点火锚点缺失或与 §4.1 原文不一致（查 CLAUDE.md / AGENTS.md / .cursorrules / .cursor/rules）"	:	00,21	checks/keel-lint.sh
+9e63e80030d0	S12	§9.1-17	invert_guard	869	        [ "$_badge" = "$_v" ] || fail_msg "README 徽章版本 ${_badge} 与 keel-version ${_v} 不一致（§9.1-14）: ${_rd#"$PWD"/}"	        [ "$_badge" != "$_v" ] || fail_msg "README 徽章版本 ${_badge} 与 keel-version ${_v} 不一致（§9.1-14）: ${_rd#"$PWD"/}"	00,39,41	checks/keel-lint.sh
+9a34029dc12b	S13	§9.1-17	relax_match	877	          grep -qE "^## ${_v} —" "$_cl" \	          grep -qE "^## " "$_cl" \	00,40	checks/keel-lint.sh
+67b3c65a7032	S14	§9.1-18	invert_guard	892	if [ -n "$_crlf" ]; then	if [ -z "$_crlf" ]; then	00,43	checks/keel-lint.sh
+c11a5d0d7f68	S15	§9.1-19	remove_check	936	      cp) fail_msg "未受控的直写：裸 cp/mv/install（应走 atomic_write，或标 # keel-write:ok）: checks/keel-upgrade.sh:${_wn}" ;;	      cp) ;;	00,45	checks/keel-lint.sh
+c09249d0b26d	S16	§9.1-19	remove_check	952	      fail_msg "成功信息早于终态校验（final_verify 应在「升级完成」前 8 行内）: checks/keel-upgrade.sh:${_wok}"	      :	00,48	checks/keel-lint.sh

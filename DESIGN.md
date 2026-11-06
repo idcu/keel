@@ -2168,15 +2168,32 @@ v3.14.0 把「有哪些判据」写在 `checks-ledger.py` 的 `REGISTRY` 里，�
 存在的用例、`none` 必须写原因、计数必须与状态重合；有 `wiring=0` 时发行说明不得写
 「全部通过」且必须显式写 `wiring=0`。
 
-**变异测试试点（v3.15.0）**：
+**变异测试试点（v3.15.0，已由下节的引擎取代）**：
 
 `checks/mutation/mutation.py` 对 9 条可机械注入的 §9.1 判据造 16 个变异体
 （删 fail 分支 / 条件取反 / 边界偏移 ×2），在独立 keel 树副本上跑对应判死用例，
 要求变异体**必须让用例变红**。得分进 `verify-report.json` 的 `mutation` 小节，
-带分母（`killed+survived+invalid=mutants`），且**不进门禁**——低分是结论不是缺陷；
-若把存活判成 FAIL，下一轮只会删掉难杀的变异体来抬分。排除的判据逐条写理由
+带分母（`killed+survived+invalid=mutants`）。排除的判据逐条写理由
 （warn 级、环境依赖、与已选判据同型等）。诚实边界：抓不到接线错、判据语义正确
 但放宽幅度未被 fixture 命中、跨文件/跨版本行为。
+
+**判据变异引擎（P0-c，取代试点）**：
+
+变异靶子是**判据本身**：一个变异体 = 对某条判据脚本的一次语义改动，用来反向检验「这条判据真的能说 no」，不是改被测代码。
+
+1. **三件产物**（`checks/mutation/`）：
+   - `operators.py`：算子注册表。算子 = 纯函数 `apply(anchor) -> new | None`，无随机、无环境依赖；返回 `None` 即该位点不适用（ENUMERATE 失败必须红，不静默跳过）。
+   - `sites.tsv`：人工维护的**位点清单**，列 `site / ref / target / anchor / operator / cases`；anchor 必须在 target 中逐字且唯一命中。
+   - `mutants.tsv`：**生成物并入库**，列 `id / site / ref / operator / line / old / new / cases`，头部绑定 `target_sha256` 与 `manifest_sha256`。
+   - `results.json`：实测结果（总数 / 杀死 / 存活 / 等价 / 豁免 / 每条判据明细 / 逐变异体证据）。
+   - `exemptions.tsv`：显式豁免清单，列 `mutant / kind / reason / expires / condition`；初始只有表头。
+2. **算子（可插拔，当前 4 个）**：`remove_check`（删掉 fail/warn 发射或 case 分支）、`invert_guard`（比较/测试条件取反：`-gt↔-le`、`-eq↔-ne`、`-n↔-z`、`=`↔`!=`）、`shift_bound`（上界阈值放宽 ×2）、`relax_match`（从 grep 模式删掉版本字面量）。新增算子 = 注册函数 + 在 `sites.tsv` 引用，不改引擎。
+3. **确定性与哈希**：枚举顺序 = `sites.tsv` 行序；`id = sha256(ref|site|operator|old|new)[:12]`；`manifest_sha256 = sha256(规范化行序列)`；`target_sha256` 绑定被测脚本。同一仓库版本 + 同一算子集合 → 逐字节相同的 `mutants.tsv`；`mutation.py --enumerate` 逐字节比对，漂移即红。清单可交付外人，按其 `old→new` 自行注入复算。
+4. **`ledger.tsv` v2 字段扩展**（每条判据）：`mutation_total / mutation_killed / mutation_survived / mutation_equivalent / mutation_exempt / mutation_status / mutation_evidence`。字段只从 `mutants.tsv + results.json + exemptions.tsv` 推导，**不写常量**。
+5. **口径**：`mutation_total = killed + survived + invalid`；`equivalent` **单独计数、不进得分分母**，必须在 `exemptions.tsv` 写明理由与到期日；`score_denominator = total - equivalent`。**存活且未豁免 → 门禁 rc=1**；等价/豁免到期 → rc=1；已杀却被声明等价 → rc=1；豁免不得静默消失。`mutation_status` 取 `PASS / SURVIVED / EXEMPT / INVALID / NONE`。
+6. **耗时上限**：变异执行可并行（`--jobs N`）；全量结果落 `results.json` 并进 `verify-report.json` 的 `mutation` 小节。门禁做**秒级自洽校验**（清单 ↔ 结果 ↔ 豁免 ↔ 账本），全量复算 `mutation.py --recompute --jobs N` 单独执行并打印实测耗时、并行度与清单哈希。
+7. **负控（`--negctl` 实跑三条）**：①把已杀变异体声明为等价；②把某条判据的变异体数量写成常量；③把存活报告成已杀（复算重跑后比对）。三条都必须 rc=1。
+8. **边界**：抓不到接线错、跨文件/跨版本行为。v3.15.0 的「不进门禁」由本条取代——因为等价/豁免现在有理由、到期与机器校验；「低分是结论」仍约束**不许为抬分删除难杀变异体**（删除位点会让该判据的 `mutation_total` 变小并在账本上可见）。
 
 **两站镜像（Gitee 主 + GitHub 镜像）**：
 

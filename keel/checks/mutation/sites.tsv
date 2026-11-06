@@ -1,0 +1,20 @@
+# keel-mutation-sites v1 —— 变异位点枚举源（口径见 DESIGN §12.3「判据变异引擎」）
+# 列：site<TAB>ref<TAB>target<TAB>anchor<TAB>operator<TAB>cases
+# anchor 必须在 target 中逐字且唯一命中；operator 必须是 operators.py 注册的算子。
+# cases 是能判死该变异体的 test-lint 用例号（逗号分隔）；00 = 合法基线，防止变异把正常路径一起打坏。
+S01	§9.1-1	checks/keel-lint.sh	    [ "$n" -gt "$lim" ]  && fail_msg "超行数 ${n}>${lim}: $rel"	remove_check	00,01
+S02	§9.1-1	checks/keel-lint.sh	    [ "$n" -gt "$lim" ]  && fail_msg "超行数 ${n}>${lim}: $rel"	shift_bound	00,01
+S03	§9.1-1	checks/keel-lint.sh	    [ "$b" -gt "$blim" ] && fail_msg "超字节 ${b}>${blim}: $rel"	remove_check	00,02
+S04	§9.1-2	checks/keel-lint.sh	  [ "$nl" -gt 10 ] && fail_msg "frontmatter 超行数 ${nl}>10: $REL"	shift_bound	00,04
+S05	§9.1-2	checks/keel-lint.sh	  [ -n "$S2_hkw" ] || fail_msg "frontmatter 缺 keywords: $REL"	remove_check	00,06
+S06	§9.1-3	checks/keel-lint.sh	    [ -e "$dir/$t" ] || echo "❌ 死链: $t  (见 ${f#"$KEEL_DIR"/})"	remove_check	00,22
+S07	§9.1-4	checks/keel-lint.sh	  grep -qxF "$f" "$refd" || fail_msg "孤儿（未被任何热区文档链接引用）: ${f#"$KEEL_DIR"/}"	remove_check	00,23,37
+S08	§9.1-6	checks/keel-lint.sh	    *) fail_msg "status 值域非法（${_s3_st}）: $rel" ;;	remove_check	00,07
+S09	§9.1-6	checks/keel-lint.sh	  case "${_s3_kw:-}" in ""|"[]"|"[ ]") fail_msg "keywords 为空: $rel" ;; esac	remove_check	00,09
+S10	§9.1-10	checks/keel-lint.sh	  [ -f "$KEEL_DIR/$need" ] || fail_msg "缺必读文件: $need"	remove_check	00,17,49,50
+S11	§9.1-10	checks/keel-lint.sh	[ "$anchor_ok" -eq 1 ] || fail_msg "点火锚点缺失或与 §4.1 原文不一致（查 CLAUDE.md / AGENTS.md / .cursorrules / .cursor/rules）"	remove_check	00,21
+S12	§9.1-17	checks/keel-lint.sh	        [ "$_badge" = "$_v" ] || fail_msg "README 徽章版本 ${_badge} 与 keel-version ${_v} 不一致（§9.1-14）: ${_rd#"$PWD"/}"	invert_guard	00,39,41
+S13	§9.1-17	checks/keel-lint.sh	          grep -qE "^## ${_v} —" "$_cl" \	relax_match	00,40
+S14	§9.1-18	checks/keel-lint.sh	if [ -n "$_crlf" ]; then	invert_guard	00,43
+S15	§9.1-19	checks/keel-lint.sh	      cp) fail_msg "未受控的直写：裸 cp/mv/install（应走 atomic_write，或标 # keel-write:ok）: checks/keel-upgrade.sh:${_wn}" ;;	remove_check	00,45
+S16	§9.1-19	checks/keel-lint.sh	      fail_msg "成功信息早于终态校验（final_verify 应在「升级完成」前 8 行内）: checks/keel-upgrade.sh:${_wok}"	remove_check	00,48
