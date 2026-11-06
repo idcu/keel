@@ -16,7 +16,7 @@ keywords: [P0-c, 变异引擎, 算子, 等价, 复算]
 
 - [x] **批1 `146c783`**：DESIGN §12.3 写入口径；`operators.py` 四算子；
       `sites.tsv` 16 位点；`mutants.tsv` 绑定 target/manifest sha256。
-- [x] **批2**：`mutation.py` 重写（--enumerate/--run/--verify/--recompute/--negctl/--report）；
+- [x] **批2 `e036761`**：`mutation.py` 重写（--enumerate/--run/--verify/--recompute/--negctl/--report）；
       `exemptions.tsv`；ledger v2 增 7 个 mutation 字段；verify.py 把存活判 FAIL。
 - [x] **全量实测**：16/16 被杀、0 存活、0 等价、0 豁免、0 无效；
       58s@1 → 25s@4 → 21s@8（8 并行 2.8×）。
@@ -30,6 +30,8 @@ keywords: [P0-c, 变异引擎, 算子, 等价, 复算]
 - ledger v2 sha `c66e77a5…`；D1 18/19、D2 22/23、D3 23/24（口径未变）
 - lint 0 fail；test-lint 61/1/0；ledger 自检 15/15；接线 27/27·25/25
 - 批2全量 verify：182 通过 / 0 失败 / 8 跳过；变异行 PASS（16/16）
+- 干净 clone（`e036761`）：--enumerate/--verify 一致，--recompute 18.4s@8，
+      16/16 杀、0 存活，清单 sha `239400ce…`、脚本 sha `61eacb5b…`
 - 坑 `mutation-catalog-drift.md`（INDEX 2995B）
 
 ## 下一步
