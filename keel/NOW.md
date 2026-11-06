@@ -3,42 +3,41 @@ scope: now
 status: active
 last-verified: 2026-11-06
 updated: 2026-11-06
-keywords: [P0-c, 变异引擎, 算子, 等价, 复算]
+keywords: [P0-c, 变异引擎, 覆盖, 存活体, 复算]
 ---
 
 # NOW · main
 
 ## 当前焦点
 
-**第二十一轮：P0-c 判据变异产品化（算子可插拔 / 清单可枚举 / 杀伤率进账本 / 结果可复算）。**
+**第二十二轮：P0-c 位点全覆盖 + 证明引擎会红。**
 
 ## 本轮进度
 
-- [x] **批1 `146c783`**：DESIGN §12.3 写入口径；`operators.py` 四算子；
-      `sites.tsv` 16 位点；`mutants.tsv` 绑定 target/manifest sha256。
-- [x] **批2 `e036761`**：`mutation.py` 重写（--enumerate/--run/--verify/--recompute/--negctl/--report）；
-      `exemptions.tsv`；ledger v2 增 7 个 mutation 字段；verify.py 把存活判 FAIL。
-- [x] **全量实测**：16/16 被杀、0 存活、0 等价、0 豁免、0 无效；
-      58s@1 → 25s@4 → 21s@8（8 并行 2.8×）。
-- [x] **负控 3/3 判死**：已杀改等价 / 变异数写死 / 存活报成已杀（重跑比对）。
-- [x] **对外报告** `mutation-report.json`（含复算命令与期望哈希）；`--verify` 秒级自校验。
-- [x] **未做**：§9.3 meta 判据变异（需 fixture 工厂，下一轮）；不改判据口径/预算。
+- [x] 24 条 counted 判据全覆盖：23 条真实位点（S01–S30，30 变异体）；
+      §9.1-15 判据级 `not_mutable` 豁免（内核不实现项目扩展位，到期 2027-06-30），不进分母。
+- [x] 算子 4 → 6（新增 remove_emit / invert_if）；`sites.tsv` 16 → 30 行。
+- [x] 引擎隔离元检查噪声：变异体在临时树回写自身 manifest sha，SPEC-DIGEST 不再顺手打红。
+- [x] 实测 30 变异体 / 28 杀 / 2 真实存活（cee6a6d6f577 §9.3-LOCALE、
+      e5309688d1aa §9.3-SPEC），两条 deferred 到期 2026-12-31；未调位点/算子「修绿」。
+- [x] 负控 4/4：已杀改等价 / 数量写死 / 存活报已杀 / 真实存活体摘豁免 → 门禁红并点名 ID。
+- [x] 未做：两条 deferred 的 fixture 加强（下一轮）；Windows 运行时。
 
 ## 实测
 
-- manifest sha `239400ce…`；keel-lint sha `61eacb5b…`
-- ledger v2 sha `c66e77a5…`；D1 18/19、D2 22/23、D3 23/24（口径未变）
-- lint 0 fail；test-lint 61/1/0；ledger 自检 15/15；接线 27/27·25/25
-- 批2全量 verify：182 通过 / 0 失败 / 8 跳过；变异行 PASS（16/16）
-- 干净 clone（`e036761`）：--enumerate/--verify 一致，--recompute 18.4s@8，
-      16/16 杀、0 存活，清单 sha `239400ce…`、脚本 sha `61eacb5b…`
-- 坑 `mutation-catalog-drift.md`（INDEX 2995B）
+- 清单 `ceb4c41a…`（30 变异体）；results 78.0s@8（本仓）
+- 并行实测：284.1s@1 / 89.7s@4 / 78.0s@8（3.2× / 3.6×）
+- 干净 clone `92f0f6e`：枚举逐字节一致、`--recompute` 114.4s@8、28/30 一致
+- ledger v2 sha `0562b9c6…`；D3 28/30（93.3%），豁免 2（deferred）
+- lint 0 fail；test-lint 61/1/0；ledger 15/15；接线 27/27·25/25
+- 全量 verify 182 通过 / 8 跳过（靶为发布模板，其变异段仍是旧试点 16/16）
 
 ## 下一步
 
-1. §9.3 meta 变异：DOC/LOCALE/PROSE/SPEC 各 1 个实现级变异体
-2. 位点扩容：§9.1-2 其余分支、§9.1-16 钩子不可执行
-3. 豁免到期巡检：把 expires 纳入 lint 告警
+1. 给 LOCALE 补「无泄漏脚本不得报错」用例、SPEC 补「点名被篡改文件」断言，
+   争取把两条 deferred 杀掉
+2. 豁免到期纳入 lint 告警
+3. §9.1-15 待项目落地契约漂移判据后改为真实位点
 
 ## 阻塞
 
